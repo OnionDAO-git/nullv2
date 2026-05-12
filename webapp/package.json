@@ -1,0 +1,29 @@
+{
+  "name": "webapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port ${WEBAPP_PORT:-3101}",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node build",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@nullv2/auth": "workspace:*",
+    "@nullv2/db": "workspace:*",
+    "@nullv2/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5.3.1",
+    "@sveltejs/kit": "^2.50.2",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@types/node": "^25.2.2",
+    "svelte": "^5.49.2",
+    "svelte-check": "^4.3.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

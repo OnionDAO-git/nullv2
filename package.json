@@ -1,0 +1,29 @@
+{
+  "name": "nullv2",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "webapp"
+  ],
+  "scripts": {
+    "dev:api": "bun run --filter @nullv2/api dev",
+    "dev:tick": "bun run --filter @nullv2/tick dev",
+    "dev:inference": "bun run --filter @nullv2/inference dev",
+    "dev:web": "bun run --filter webapp dev",
+    "build:web": "bun run --filter webapp build",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "bun run --filter @nullv2/db generate",
+    "db:migrate": "bun run --filter @nullv2/db migrate",
+    "db:studio": "bun run --filter @nullv2/db studio",
+    "db:seed": "bun run --filter @nullv2/db seed",
+    "docker:build": "docker compose -f docker-compose.yml -f docker-compose.prod.yml build",
+    "docker:up": "docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d",
+    "docker:down": "docker compose -f docker-compose.yml -f docker-compose.prod.yml down"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "typescript": "^5.7.0"
+  }
+}

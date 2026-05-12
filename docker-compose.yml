@@ -1,0 +1,25 @@
+# Null City v2 — local dev compose.
+#
+# In dev: only Postgres runs in Docker. Services run with `bun --hot` on the host
+# so iteration is fast. For prod the same compose layout adds api/tick/webapp
+# images (see Dockerfile.* in each service/webapp dir, TBD).
+#
+# Postgres listens on host :5433 to avoid clashing with landing-2026 on :5432.
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nullv2
+      POSTGRES_PASSWORD: nullv2_dev
+      POSTGRES_DB: nullv2
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nullv2 -d nullv2"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

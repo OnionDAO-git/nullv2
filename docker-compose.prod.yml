@@ -1,0 +1,85 @@
+# Production overlay: services running in containers, on top of the postgres
+# already defined in docker-compose.yml.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Reverse proxy (Caddy/nginx/Cloudflare Tunnel) lives outside this file. Point
+# city.oniondao.dev → webapp:3101 and city.oniondao.dev/v1/* → api:3100. The
+# /v1 path prefix is what the webapp client-fetches; SvelteKit's dev proxy
+# handles it in dev, the reverse proxy handles it in prod.
+#
+# Required env in .env (copy from .env.example and fill in):
+#   DATABASE_URL=postgresql://nullv2:nullv2_dev@postgres:5432/nullv2
+#   AUTH_DATABASE_URL=...   # same as DATABASE_URL when sharing one Postgres
+#   INFERENCE_API_KEY=...
+#   INFERENCE_BASE_URL=...
+
+services:
+  postgres:
+    # inherited; expose on host only in dev compose, prod keeps it internal
+    ports: !reset []
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-session}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      API_PORT: 3100
+      INFERENCE_URL: http://inference:3102
+    ports:
+      - "3100:3100"
+
+  tick:
+    build:
+      context: .
+      dockerfile: services/tick/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      TICK_INTERVAL_MS: ${TICK_INTERVAL_MS:-300000}
+
+  inference:
+    build:
+      context: .
+      dockerfile: services/inference/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      INFERENCE_PORT: 3102
+      INFERENCE_BASE_URL: ${INFERENCE_BASE_URL:-https://api.openai.com/v1}
+      INFERENCE_API_KEY: ${INFERENCE_API_KEY}
+      INFERENCE_MODEL: ${INFERENCE_MODEL:-gpt-4o-mini}
+      INFERENCE_MAX_TOKENS: ${INFERENCE_MAX_TOKENS:-400}
+    ports:
+      - "3102:3102"
+
+  webapp:
+    build:
+      context: .
+      dockerfile: webapp/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      AUTH_COOKIE_NAME: ${AUTH_COOKIE_NAME:-session}
+      AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://api:3100}
+      PORT: 3101
+    ports:
+      - "3101:3101"

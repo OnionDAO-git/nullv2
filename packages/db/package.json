@@ -1,0 +1,27 @@
+{
+  "name": "@nullv2/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./external": "./src/external/index.ts"
+  },
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "studio": "drizzle-kit studio",
+    "seed": "bun run src/seed.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.38.0",
+    "postgres": "^3.4.0",
+    "@nullv2/types": "workspace:*"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0"
+  }
+}
