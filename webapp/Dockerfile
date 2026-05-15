@@ -3,9 +3,11 @@
 FROM oven/bun:1.2 AS builder
 WORKDIR /app
 
-COPY package.json bunfig.toml ./
-COPY tsconfig.base.json ./
+COPY package.json bun.lock bunfig.toml tsconfig.base.json ./
 COPY packages ./packages
+COPY services/api/package.json ./services/api/package.json
+COPY services/tick/package.json ./services/tick/package.json
+COPY services/inference/package.json ./services/inference/package.json
 COPY webapp/package.json ./webapp/package.json
 
 RUN bun install --frozen-lockfile
@@ -17,11 +19,7 @@ FROM oven/bun:1.2-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/webapp/build ./webapp/build
-COPY --from=builder /app/webapp/package.json ./webapp/package.json
-COPY package.json ./
+COPY --from=builder /app /app
 
 EXPOSE 3101
 ENV PORT=3101

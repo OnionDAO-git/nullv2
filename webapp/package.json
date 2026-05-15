@@ -14,7 +14,8 @@
   "dependencies": {
     "@nullv2/auth": "workspace:*",
     "@nullv2/db": "workspace:*",
-    "@nullv2/types": "workspace:*"
+    "@nullv2/types": "workspace:*",
+    "drizzle-orm": "^0.38.0"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.3.1",
