@@ -7,6 +7,7 @@
   import SimpleStainedGlass from '$lib/components/SimpleStainedGlass.svelte';
   import { FACTIONS, type FactionId } from '@nullv2/types';
   import { type EmotionId } from '$lib/emotions';
+  import { formatClock } from '$lib/time';
   import { invalidateAll, goto } from '$app/navigation';
 
   let { data } = $props();
@@ -23,7 +24,7 @@
     const d = new Date(iso);
     const today = new Date();
     if (d.toDateString() === today.toDateString()) {
-      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      return formatClock(d);
     }
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);

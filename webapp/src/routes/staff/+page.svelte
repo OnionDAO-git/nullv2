@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { formatClockWithSeconds } from '$lib/time';
+
   interface WorkshopRow {
     id: string;
     title: string;
@@ -144,9 +146,7 @@
     }
   }
 
-  function fmtTime(ms: number): string {
-    return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
+  const fmtTime = formatClockWithSeconds;
 
   function userLabel(u: UserSearchRow): string {
     const name = u.name?.trim();
@@ -155,25 +155,25 @@
 
   function runGrantSearch(q: string) {
     const trimmed = q.trim();
-    if (trimmed.length < 2) {
-      grantResults = [];
-      grantSearching = false;
-      return;
-    }
     const mySeq = ++grantSearchSeq;
     grantSearching = true;
+    grantError = null;
     fetch(`/v1/admin/users?q=${encodeURIComponent(trimmed)}`)
       .then(async (res) => {
         if (mySeq !== grantSearchSeq) return;
         if (!res.ok) {
+          const text = await res.text().catch(() => '');
           grantResults = [];
+          grantError = `User search failed (${res.status}): ${text || res.statusText}`;
           return;
         }
         const body = (await res.json()) as { users: UserSearchRow[] };
         grantResults = body.users ?? [];
       })
-      .catch(() => {
-        if (mySeq === grantSearchSeq) grantResults = [];
+      .catch((err) => {
+        if (mySeq !== grantSearchSeq) return;
+        grantResults = [];
+        grantError = `User search error: ${err instanceof Error ? err.message : String(err)}`;
       })
       .finally(() => {
         if (mySeq === grantSearchSeq) grantSearching = false;
@@ -188,6 +188,13 @@
     }
     if (grantSearchTimer) clearTimeout(grantSearchTimer);
     grantSearchTimer = setTimeout(() => runGrantSearch(value), 200);
+  }
+
+  function onGrantFocus() {
+    if (grantSelected) return;
+    if (grantResults.length === 0 && !grantSearching) {
+      runGrantSearch(grantQuery);
+    }
   }
 
   function pickGrantUser(u: UserSearchRow) {
@@ -328,7 +335,8 @@
         type="text"
         value={grantQuery}
         oninput={onGrantQueryInput}
-        placeholder="visitor@example.com"
+        onfocus={onGrantFocus}
+        placeholder="search or focus to browse"
         disabled={grantSubmitting}
         autocomplete="off"
       />
@@ -349,7 +357,7 @@
         </ul>
       {:else if grantSearching && !grantSelected}
         <p class="hint">Searching…</p>
-      {:else if grantQuery.trim().length >= 2 && !grantSearching && !grantSelected && grantResults.length === 0}
+      {:else if !grantSearching && !grantSelected && grantResults.length === 0 && grantQuery.trim().length > 0}
         <p class="hint">No matches.</p>
       {/if}
     </label>

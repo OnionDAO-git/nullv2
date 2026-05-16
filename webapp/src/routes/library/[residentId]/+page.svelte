@@ -7,6 +7,7 @@
   import SimpleStainedGlass from '$lib/components/SimpleStainedGlass.svelte';
   import { FACTIONS, ROOMS, type RoomId } from '@nullv2/types';
   import { type EmotionId } from '$lib/emotions';
+  import { formatDateClock } from '$lib/time';
 
   let { data } = $props();
 
@@ -17,15 +18,7 @@
       ?? data.soul.roomId,
   );
 
-  function fmtDate(iso: string): string {
-    const d = new Date(iso);
-    const dateStr = d.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-    });
-    const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    return `${dateStr} · ${timeStr}`;
-  }
+  const fmtDate = formatDateClock;
 
   function fmtDuration(ticks: number, tickMinutes: number = 5): string {
     const totalMinutes = ticks * tickMinutes;

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { ACHIEVEMENTS, type AchievementId } from '@nullv2/types';
+  import { formatClock } from '$lib/time';
 
   interface PrintJobRow {
     id: string;
@@ -33,10 +34,7 @@
 
   function fmtTime(iso: string): string {
     try {
-      return new Date(iso).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return formatClock(iso);
     } catch {
       return iso;
     }

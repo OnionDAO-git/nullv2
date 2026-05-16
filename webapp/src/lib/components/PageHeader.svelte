@@ -1,8 +1,11 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import ShardChip from './ShardChip.svelte';
   import Hamburger from './Hamburger.svelte';
 
   let { shardBalance = 0 }: { shardBalance?: number } = $props();
+
+  let isAdmin = $derived(Boolean(page.data?.nav?.isAdmin));
 </script>
 
 <header class="page-header">
@@ -11,7 +14,12 @@
     <span class="brand__mark" aria-hidden="true"></span>
     <span class="brand__word">Null City</span>
   </div>
-  <ShardChip count={shardBalance} />
+  <div class="right">
+    {#if isAdmin}
+      <a class="staff-link" href="/staff">Staff</a>
+    {/if}
+    <ShardChip count={shardBalance} />
+  </div>
 </header>
 
 <style>
@@ -33,6 +41,29 @@
     align-items: center;
     gap: 10px;
     min-width: 0;
+  }
+
+  .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .staff-link {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--s-gold);
+    text-decoration: none;
+    padding: 4px 9px;
+    border: 1px solid rgba(228, 184, 64, 0.45);
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .staff-link:hover {
+    background: rgba(228, 184, 64, 0.12);
+    color: var(--text-0);
   }
 
   .brand__mark {

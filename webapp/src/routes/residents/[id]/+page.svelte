@@ -5,6 +5,7 @@
   import SectionTag from '$lib/components/SectionTag.svelte';
   import SimpleStainedGlass from '$lib/components/SimpleStainedGlass.svelte';
   import { EMOTIONS, type EmotionId } from '$lib/emotions';
+  import { formatClock } from '$lib/time';
   import {
     FACTIONS,
     type FactionId,
@@ -40,10 +41,7 @@
   );
   const isDead = $derived(data.resident.status !== 'alive');
 
-  function timeOf(iso: string): string {
-    const d = new Date(iso);
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  }
+  const timeOf = formatClock;
 
   async function sendMessage() {
     const text = draft.trim();

@@ -24,10 +24,8 @@ export function adminRoute(db: Db) {
 
   r.get('/users', async (c) => {
     const q = (c.req.query('q') ?? '').trim();
-    if (q.length < 2) return c.json({ users: [] });
 
-    const like = `%${q}%`;
-    const rows = await db
+    const base = db
       .select({
         id: external.users.id,
         email: external.users.email,
@@ -35,16 +33,20 @@ export function adminRoute(db: Db) {
         handle: external.users.handle,
         isAdmin: external.users.isAdmin,
       })
-      .from(external.users)
-      .where(
-        or(
-          ilike(external.users.email, like),
-          ilike(external.users.name, like),
-          ilike(external.users.handle, like),
-        ),
-      )
-      .orderBy(external.users.email)
-      .limit(20);
+      .from(external.users);
+
+    const rows = q.length === 0
+      ? await base.orderBy(external.users.email).limit(100)
+      : await base
+          .where(
+            or(
+              ilike(external.users.email, `%${q}%`),
+              ilike(external.users.name, `%${q}%`),
+              ilike(external.users.handle, `%${q}%`),
+            ),
+          )
+          .orderBy(external.users.email)
+          .limit(100);
 
     return c.json({ users: rows });
   });

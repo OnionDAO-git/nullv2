@@ -7,6 +7,7 @@
   import SimpleStainedGlass from '$lib/components/SimpleStainedGlass.svelte';
   import { EMOTIONS, type EmotionId } from '$lib/emotions';
   import { FACTIONS, type FactionId } from '@nullv2/types';
+  import { formatClock } from '$lib/time';
   import { goto } from '$app/navigation';
 
   let { data } = $props();
@@ -15,12 +16,7 @@
     return name.trim().charAt(0).toUpperCase() || '?';
   }
 
-  function timeOf(iso: string): string {
-    const d = new Date(iso);
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${hh}:${mm}`;
-  }
+  const timeOf = formatClock;
 
   const activeRoom = $derived(data.rooms.find((r) => r.id === data.activeId)!);
   const activeFaction = $derived(

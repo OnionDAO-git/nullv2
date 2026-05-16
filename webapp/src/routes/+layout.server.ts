@@ -9,6 +9,7 @@ export interface NavData {
   visitorHandle: string;
   unreadCount: number;
   standings: { factionId: string; tier: StandingTier }[];
+  isAdmin: boolean;
 }
 
 const EMPTY_NAV: NavData = {
@@ -16,6 +17,7 @@ const EMPTY_NAV: NavData = {
   visitorHandle: 'visitor',
   unreadCount: 0,
   standings: [],
+  isAdmin: false,
 };
 
 export const load: LayoutServerLoad = async ({ locals }) => {
@@ -54,6 +56,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
         visitor.user.handle ?? visitor.user.name ?? visitor.user.email ?? 'visitor',
       unreadCount: unreadRows[0]?.count ?? 0,
       standings,
+      isAdmin: visitor.user.isAdmin ?? false,
     } satisfies NavData,
   };
 };
