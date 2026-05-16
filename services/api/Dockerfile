@@ -12,6 +12,7 @@ COPY webapp/package.json ./webapp/package.json
 
 RUN bun install --frozen-lockfile
 
+COPY services/inference ./services/inference
 COPY services/api ./services/api
 
 FROM oven/bun:1.2-slim AS runner

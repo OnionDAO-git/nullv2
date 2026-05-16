@@ -21,8 +21,10 @@
 #  - You know the name of the Postgres service in landing-2026's project
 #    (Railway's default for managed Postgres is "Postgres").
 #
-# Re-running: safe-ish. Service creation is idempotent; variables overwrite;
-# `railway up` redeploys. If a step fails, fix and re-run.
+# Re-running: safe + intentional. Service creation is idempotent (existing
+# services are reused, not recreated); variables overwrite; `railway up`
+# redeploys every service from the current working tree, so re-running the
+# script always ships the newest code. If a step fails, fix and re-run.
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -105,11 +107,10 @@ echo "⚠  This will add up to 4 nullv2 services (api, tick, inference, webapp)"
 echo "   into landing-2026's Railway project and reference its Postgres at:"
 echo "     $DB_URL_REF"
 echo
-echo "   Idempotency: services that ALREADY EXIST in this project will NOT"
-echo "   be re-created or re-deployed. Their env vars WILL be overwritten"
-echo "   from this script's values (so they stay in sync). To force a"
-echo "   redeploy of an existing service after vars change, run:"
-echo "     railway up --service <name> --detach"
+echo "   Idempotency: services that ALREADY EXIST will NOT be re-created,"
+echo "   but they WILL be redeployed from your current working tree (so"
+echo "   this script always ships the newest code). Env vars are also"
+echo "   overwritten from this script's values to stay in sync."
 echo
 echo "   Migrations will run against the SHARED prod DB. nullv2 only touches"
 echo "   its own tables (drizzle.config.ts excludes the external/ schema)."
@@ -162,22 +163,19 @@ fi
 
 # ---- services ---------------------------------------------------------------
 
-NEW_SERVICES=()
-
 ensure_service() {
   local name="$1"
   # `railway add --service NAME` creates an empty service. If it already exists
-  # the CLI errors; we swallow that and continue. Only newly-created services
-  # get deployed below — existing ones are left alone on re-runs.
+  # the CLI errors; we swallow that and continue. Either way, the service gets
+  # redeployed below with the current working tree.
   if railway add --service "$name" >/dev/null 2>&1; then
     echo "  + created $name (will deploy)"
-    NEW_SERVICES+=("$name")
   else
-    echo "  ✓ $name already exists — NOT re-creating, NOT re-deploying"
+    echo "  ✓ $name already exists (will redeploy with current code)"
   fi
 }
 
-echo "▶ ensuring services (existing services are kept as-is; only missing ones are created)"
+echo "▶ ensuring services (missing ones are created; existing ones are reused)"
 ensure_service api
 ensure_service tick
 ensure_service inference
@@ -247,18 +245,10 @@ set_vars webapp \
 
 deploy() {
   local service="$1"
-  # Only deploy services we just created. Existing services keep whatever
-  # build is already running — re-deploy them manually if needed:
-  #   railway up --service <name> --detach
-  local s
-  for s in "${NEW_SERVICES[@]+"${NEW_SERVICES[@]}"}"; do
-    if [ "$s" = "$service" ]; then
-      echo "▶ deploying $service (detached — check logs in dashboard)"
-      railway up --service "$service" --detach
-      return
-    fi
-  done
-  echo "▶ skipping $service deploy (already exists; run 'railway up --service $service --detach' to force)"
+  # Always redeploy. New services have nothing running; existing services get
+  # rebuilt from the current working tree so the newest code ships.
+  echo "▶ deploying $service (detached — check logs in dashboard)"
+  railway up --service "$service" --detach
 }
 
 deploy inference
