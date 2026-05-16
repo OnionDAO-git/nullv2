@@ -22,6 +22,8 @@ export const shardLedger = pgTable(
     reason: text('reason').$type<ShardLedgerReason>().notNull(),
     refKind: text('ref_kind').$type<RefKind>(),
     refId: text('ref_id'),
+    /** Free-text annotation. Populated by admin_grant for now. */
+    note: text('note'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({

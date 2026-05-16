@@ -1,0 +1,1 @@
+ALTER TABLE "shard_ledger" ADD COLUMN "note" text;

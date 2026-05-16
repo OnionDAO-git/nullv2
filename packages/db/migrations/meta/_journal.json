@@ -22,6 +22,13 @@
       "when": 1778954345249,
       "tag": "0002_striped_wallop",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778962987399,
+      "tag": "0003_bumpy_la_nuit",
+      "breakpoints": true
     }
   ]
 }

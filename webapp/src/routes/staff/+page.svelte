@@ -24,6 +24,33 @@
     newShardBalance?: number;
   }
 
+  interface UserSearchRow {
+    id: string;
+    email: string;
+    name: string | null;
+    handle: string | null;
+    isAdmin: boolean | null;
+  }
+
+  interface GrantResult {
+    when: number;
+    targetLabel: string;
+    delta: number;
+    newShardBalance: number;
+    note: string | null;
+  }
+
+  interface GrantResponse {
+    grant?: { id?: string; delta: number; note: string | null; createdAt?: string };
+    target?: {
+      humanId: string;
+      userId: string;
+      email: string;
+      name: string | null;
+      newShardBalance: number;
+    };
+  }
+
   let { data } = $props<{ data: { workshops: WorkshopRow[] } }>();
 
   let selectedQrOverride = $state<string | null>(null);
@@ -32,6 +59,19 @@
   let error = $state<string | null>(null);
   let toast = $state<string | null>(null);
   let recentScans = $state<ScanResult[]>([]);
+
+  // Manual grant state
+  let grantQuery = $state<string>('');
+  let grantResults = $state<UserSearchRow[]>([]);
+  let grantSelected = $state<UserSearchRow | null>(null);
+  let grantAmount = $state<number>(0);
+  let grantNote = $state<string>('');
+  let grantSearching = $state<boolean>(false);
+  let grantSubmitting = $state<boolean>(false);
+  let grantError = $state<string | null>(null);
+  let grantRecent = $state<GrantResult[]>([]);
+  let grantSearchSeq = 0;
+  let grantSearchTimer: ReturnType<typeof setTimeout> | null = null;
 
   let selectedQr = $derived(selectedQrOverride ?? data.workshops[0]?.qrCode ?? '');
   let selectedWorkshop = $derived(
@@ -107,6 +147,120 @@
   function fmtTime(ms: number): string {
     return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
+
+  function userLabel(u: UserSearchRow): string {
+    const name = u.name?.trim();
+    return name ? `${name} (${u.email})` : u.email;
+  }
+
+  function runGrantSearch(q: string) {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) {
+      grantResults = [];
+      grantSearching = false;
+      return;
+    }
+    const mySeq = ++grantSearchSeq;
+    grantSearching = true;
+    fetch(`/v1/admin/users?q=${encodeURIComponent(trimmed)}`)
+      .then(async (res) => {
+        if (mySeq !== grantSearchSeq) return;
+        if (!res.ok) {
+          grantResults = [];
+          return;
+        }
+        const body = (await res.json()) as { users: UserSearchRow[] };
+        grantResults = body.users ?? [];
+      })
+      .catch(() => {
+        if (mySeq === grantSearchSeq) grantResults = [];
+      })
+      .finally(() => {
+        if (mySeq === grantSearchSeq) grantSearching = false;
+      });
+  }
+
+  function onGrantQueryInput(e: Event) {
+    const value = (e.currentTarget as HTMLInputElement).value;
+    grantQuery = value;
+    if (grantSelected && value !== userLabel(grantSelected)) {
+      grantSelected = null;
+    }
+    if (grantSearchTimer) clearTimeout(grantSearchTimer);
+    grantSearchTimer = setTimeout(() => runGrantSearch(value), 200);
+  }
+
+  function pickGrantUser(u: UserSearchRow) {
+    grantSelected = u;
+    grantQuery = userLabel(u);
+    grantResults = [];
+  }
+
+  async function submitGrant(event: SubmitEvent) {
+    event.preventDefault();
+    grantError = null;
+    if (!grantSelected) {
+      grantError = 'Pick a user from the search results.';
+      return;
+    }
+    if (!Number.isFinite(grantAmount) || grantAmount === 0) {
+      grantError = 'Amount must be a non-zero integer.';
+      return;
+    }
+    if (!Number.isInteger(grantAmount)) {
+      grantError = 'Amount must be a whole number.';
+      return;
+    }
+
+    const noteTrimmed = grantNote.trim();
+    const body = {
+      userId: grantSelected.id,
+      amount: grantAmount,
+      ...(noteTrimmed ? { note: noteTrimmed } : {}),
+    };
+
+    grantSubmitting = true;
+    try {
+      const res = await fetch('/v1/admin/shards/grant', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        grantError = `Grant failed (${res.status}): ${text || res.statusText}`;
+        return;
+      }
+      const payload = (await res.json()) as GrantResponse;
+      const target = payload.target!;
+      const delta = payload.grant?.delta ?? grantAmount;
+
+      showToast(
+        `${delta >= 0 ? '+' : ''}${delta} Shards → ${target.email}. New balance: ${target.newShardBalance}`,
+      );
+
+      grantRecent = [
+        {
+          when: Date.now(),
+          targetLabel: target.name ? `${target.name} (${target.email})` : target.email,
+          delta,
+          newShardBalance: target.newShardBalance,
+          note: payload.grant?.note ?? null,
+        },
+        ...grantRecent,
+      ].slice(0, 20);
+
+      grantSelected = null;
+      grantQuery = '';
+      grantAmount = 0;
+      grantNote = '';
+      grantResults = [];
+    } catch (err) {
+      grantError = err instanceof Error ? err.message : String(err);
+    } finally {
+      grantSubmitting = false;
+    }
+  }
 </script>
 
 {#if toast}
@@ -164,6 +318,94 @@
 
   {#if error}
     <p class="error">{error}</p>
+  {/if}
+
+  <h2 class="mt">Award Shards (manual)</h2>
+  <form onsubmit={submitGrant} class="scan grant">
+    <label class="search-cell">
+      <span>User (search by email, name, or handle)</span>
+      <input
+        type="text"
+        value={grantQuery}
+        oninput={onGrantQueryInput}
+        placeholder="visitor@example.com"
+        disabled={grantSubmitting}
+        autocomplete="off"
+      />
+      {#if grantResults.length > 0 && !grantSelected}
+        <ul class="results" role="listbox">
+          {#each grantResults as u (u.id)}
+            <li>
+              <button
+                type="button"
+                class="result"
+                onclick={() => pickGrantUser(u)}
+              >
+                <span class="result-main">{u.name ?? '(no name)'}</span>
+                <span class="result-sub">{u.email}{u.handle ? ' · @' + u.handle : ''}{u.isAdmin ? ' · admin' : ''}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else if grantSearching && !grantSelected}
+        <p class="hint">Searching…</p>
+      {:else if grantQuery.trim().length >= 2 && !grantSearching && !grantSelected && grantResults.length === 0}
+        <p class="hint">No matches.</p>
+      {/if}
+    </label>
+    <label>
+      <span>Amount (Shards)</span>
+      <input
+        type="number"
+        step="1"
+        bind:value={grantAmount}
+        disabled={grantSubmitting}
+        placeholder="0"
+      />
+    </label>
+    <label class="note-cell">
+      <span>Note (optional)</span>
+      <input
+        type="text"
+        bind:value={grantNote}
+        disabled={grantSubmitting}
+        placeholder="e.g. judged the soldering demo"
+        maxlength="500"
+        autocomplete="off"
+      />
+    </label>
+    <button type="submit" disabled={grantSubmitting || !grantSelected || grantAmount === 0}>
+      {grantSubmitting ? 'Granting…' : 'Grant'}
+    </button>
+  </form>
+
+  {#if grantError}
+    <p class="error">{grantError}</p>
+  {/if}
+
+  {#if grantRecent.length > 0}
+    <table class="mt-sm">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Recipient</th>
+          <th class="num">Δ</th>
+          <th class="num">New Balance</th>
+          <th>Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#each grantRecent as g (g.when + g.targetLabel)}
+          <tr>
+            <td>{fmtTime(g.when)}</td>
+            <td>{g.targetLabel}</td>
+            <td class="num">{g.delta > 0 ? '+' : ''}{g.delta}</td>
+            <td class="num">{g.newShardBalance}</td>
+            <td>{g.note ?? ''}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
   {/if}
 
   <h2 class="mt">Recent Scans</h2>
@@ -350,6 +592,70 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
     font-family: var(--mono);
+  }
+  .grant {
+    grid-template-columns: 2fr 1fr 2fr auto;
+  }
+  .grant .search-cell,
+  .grant .note-cell {
+    position: relative;
+  }
+  .grant .results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+    background: var(--ground-0);
+    border: 1px solid var(--ground-4);
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 5;
+  }
+  .grant .results li {
+    border-bottom: 1px solid var(--ground-3);
+  }
+  .grant .results li:last-child {
+    border-bottom: none;
+  }
+  .grant .result {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    color: var(--text-1);
+    border: none;
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: var(--sans);
+    font-size: 13px;
+  }
+  .grant .result:hover {
+    background: var(--ground-2);
+    color: var(--text-0);
+  }
+  .grant .result-main {
+    color: var(--text-0);
+  }
+  .grant .result-sub {
+    color: var(--text-3);
+    font-size: 11px;
+    font-family: var(--mono);
+  }
+  .grant .hint {
+    margin: 4px 0 0;
+    color: var(--text-3);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .mt-sm {
+    margin-top: 16px;
   }
   .toast {
     position: fixed;

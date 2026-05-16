@@ -18,6 +18,8 @@ export const SHARD_LEDGER_REASON_IDS = [
   'resource_purchase',
   /** Visitor offered Shards in a chat without requesting a resource. */
   'chat_attention',
+  /** Admin manually granted Shards to a human (out-of-band award). */
+  'admin_grant',
 ] as const;
 export type ShardLedgerReason = (typeof SHARD_LEDGER_REASON_IDS)[number];
 
@@ -41,6 +43,8 @@ export const REF_KIND_IDS = [
   'achievement',
   'standing',
   'resident_death',
+  /** Acting admin's user id, attached to manual shard grants. */
+  'admin',
 ] as const;
 export type RefKind = (typeof REF_KIND_IDS)[number];
 
