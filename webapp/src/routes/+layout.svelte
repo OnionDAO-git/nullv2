@@ -1,20 +1,16 @@
 <script lang="ts">
+  import './layout.css';
+
   let { children } = $props();
 </script>
 
-<main>
-  {@render children?.()}
-</main>
+<svelte:head>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap"
+    rel="stylesheet"
+  />
+</svelte:head>
 
-<style>
-  :global(body) {
-    margin: 0;
-    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    background: #0a0a0a;
-    color: #e5e5e5;
-  }
-
-  main {
-    min-height: 100vh;
-  }
-</style>
+{@render children()}

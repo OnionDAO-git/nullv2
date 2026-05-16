@@ -157,7 +157,8 @@
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #000;
+    background: var(--ground-0);
+    font-family: var(--sans);
   }
 
   .map {
@@ -171,8 +172,8 @@
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      linear-gradient(to right, rgba(237, 232, 224, 0.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(237, 232, 224, 0.025) 1px, transparent 1px);
     background-size: 2% 2%;
   }
 
@@ -182,28 +183,30 @@
     height: 1.8%;
     border-radius: 1px;
     border: 1px solid transparent;
-    box-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 4px rgba(237, 232, 224, 0.06);
   }
   .cell.locksmith {
-    box-shadow: 0 0 6px rgba(160, 24, 24, 0.5);
+    box-shadow: 0 0 6px rgba(212, 112, 122, 0.5);
   }
 
   .leaderboard {
     position: absolute;
     top: 1.5rem;
     right: 1.5rem;
-    background: rgba(10, 10, 10, 0.85);
-    border: 1px solid #1f1f1f;
-    padding: 1rem 1.25rem;
+    background: rgba(22, 19, 16, 0.85);
+    border: 1px solid var(--ground-4);
+    padding: 16px 20px;
     min-width: 18rem;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(6px);
   }
   .leaderboard h2 {
-    margin: 0 0 0.75rem;
-    font-size: 0.7rem;
+    margin: 0 0 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 0.2em;
-    color: #888;
+    letter-spacing: 4px;
+    color: var(--text-3);
   }
   .leaderboard ul {
     list-style: none;
@@ -211,29 +214,30 @@
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 8px;
   }
   .leaderboard li {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 0.95rem;
+    gap: 12px;
+    font-size: 14px;
   }
   .swatch {
     display: inline-block;
-    width: 0.9rem;
-    height: 0.9rem;
+    width: 14px;
+    height: 14px;
     border-radius: 2px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(237, 232, 224, 0.12);
   }
   .name {
     flex: 1;
-    color: #d5d5d5;
+    font-family: var(--serif);
+    color: var(--text-1);
   }
   .count {
-    color: #e6b800;
+    color: var(--s-gold);
+    font-family: var(--mono);
     font-variant-numeric: tabular-nums;
-    font-weight: 600;
     min-width: 2.5rem;
     text-align: right;
   }
@@ -241,8 +245,8 @@
   .ticker {
     flex: 0 0 auto;
     height: 3.5rem;
-    background: #050505;
-    border-top: 1px solid #1a1a1a;
+    background: var(--ground-1);
+    border-top: 1px solid var(--ground-3);
     overflow: hidden;
     position: relative;
   }
@@ -261,18 +265,19 @@
     animation: none;
   }
   .item {
-    color: #c0c0c0;
-    font-size: 1.1rem;
+    color: var(--text-2);
+    font-family: var(--serif);
+    font-size: 16px;
     letter-spacing: 0.02em;
   }
   .item-birth {
-    color: #b6f5b6;
+    color: var(--s-green);
   }
   .item-death {
-    color: #ff9b9b;
+    color: var(--s-rose);
   }
   .item-achievement {
-    color: #e6b800;
+    color: var(--s-gold);
   }
 
   @keyframes scroll {

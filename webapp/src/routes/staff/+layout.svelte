@@ -11,73 +11,121 @@
   let current = $derived(page.url.pathname);
 </script>
 
-<header>
-  <strong>Null City</strong>
-  <span class="badge">STAFF</span>
-  <nav>
-    {#each navItems as item (item.href)}
-      <a href={item.href} class:active={current === item.href}>{item.label}</a>
-    {/each}
-  </nav>
-  <span class="who">
-    {data.visitor.user.name ?? data.visitor.user.email}
-  </span>
-  <a class="logout" href="https://oniondao.dev/account">Log out</a>
+<header class="nav">
+  <div class="nav__left">
+    <a href="/staff" class="wordmark">Null City</a>
+    <span class="badge">Staff</span>
+    <nav class="links">
+      {#each navItems as item (item.href)}
+        <a href={item.href} class:active={current === item.href}>{item.label}</a>
+      {/each}
+    </nav>
+  </div>
+  <div class="nav__right">
+    <span class="who">{data.visitor.user.name ?? data.visitor.user.email}</span>
+    <a class="logout" href="https://oniondao.dev/account">Log out</a>
+  </div>
 </header>
 
 {@render children?.()}
 
 <style>
-  header {
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 46px;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1.5rem;
-    border-bottom: 1px solid #1f1f1f;
-    background: #0d0d0d;
+    justify-content: space-between;
+    background: var(--ground-1);
+    border-bottom: 1px solid var(--ground-4);
+    padding: 0 8px;
   }
-  strong {
-    letter-spacing: -0.01em;
-  }
-  .badge {
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
-    padding: 0.15rem 0.5rem;
-    border: 1px solid #e6b800;
-    color: #e6b800;
-    border-radius: 2px;
-  }
-  nav {
+
+  .nav__left,
+  .nav__right {
     display: flex;
-    gap: 0.25rem;
-    margin-left: 1rem;
+    align-items: center;
+    height: 100%;
   }
-  nav a {
-    color: #999;
+
+  .wordmark {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-family: var(--serif);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    color: var(--text-0);
     text-decoration: none;
-    padding: 0.35rem 0.75rem;
-    border: 1px solid transparent;
-    font-size: 0.9rem;
   }
-  nav a:hover {
-    color: #e5e5e5;
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--s-gold);
+    padding: 3px 8px;
+    border: 1px solid rgba(228, 184, 64, 0.45);
   }
-  nav a.active {
-    color: #e5e5e5;
-    border-color: #2a2a2a;
-    background: #161616;
+
+  .links {
+    display: flex;
+    height: 100%;
+    margin-left: 12px;
   }
+
+  .links a {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .links a:hover {
+    color: var(--text-0);
+  }
+
+  .links a.active {
+    color: var(--text-0);
+    background: var(--ground-2);
+  }
+
   .who {
-    margin-left: auto;
-    color: #888;
-    font-size: 0.85rem;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--text-2);
+    padding: 0 12px;
   }
+
   .logout {
-    color: #e6b800;
-    font-size: 0.85rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-3);
     text-decoration: none;
+    border-left: 1px solid var(--ground-4);
+    transition: color 0.2s;
   }
+
   .logout:hover {
-    text-decoration: underline;
+    color: var(--s-rose);
   }
 </style>

@@ -129,125 +129,145 @@
 
 <style>
   .wrap {
-    padding: 2rem 1.5rem;
-    max-width: 72rem;
+    padding: 48px 32px;
+    max-width: 1200px;
     margin: 0 auto;
   }
   .head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 1rem;
+    margin-bottom: 24px;
   }
   h2 {
-    font-size: 0.85rem;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #999;
+    letter-spacing: 4px;
+    color: var(--text-3);
     margin: 0;
   }
   .hint {
-    font-size: 0.75rem;
-    color: #666;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-3);
   }
   .empty {
-    color: #666;
+    color: var(--text-3);
     font-style: italic;
   }
   .error {
-    color: #ff6b6b;
-    margin-bottom: 1rem;
+    color: var(--s-rose);
+    margin-bottom: 16px;
+    font-family: var(--sans);
+    font-size: 13px;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
-    background: #0d0d0d;
-    border: 1px solid #1f1f1f;
+    font-size: 13px;
+    background: var(--ground-1);
+    border: 1px solid var(--ground-3);
   }
   th,
   td {
     text-align: left;
-    padding: 0.6rem 0.85rem;
-    border-bottom: 1px solid #1a1a1a;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ground-3);
     vertical-align: middle;
   }
   th {
-    color: #888;
-    font-weight: 500;
+    color: var(--text-3);
+    font-family: var(--mono);
+    font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.7rem;
-    background: #111;
+    letter-spacing: 2px;
+    font-size: 10px;
+    background: var(--ground-2);
+  }
+  td {
+    font-family: var(--sans);
+    color: var(--text-1);
   }
   code {
-    background: #1a1a1a;
-    padding: 0.15rem 0.45rem;
+    background: var(--ground-2);
+    padding: 3px 8px;
     border-radius: 2px;
-    color: #e6b800;
+    color: var(--s-gold);
+    font-family: var(--mono);
+    font-size: 12px;
     font-variant-numeric: tabular-nums;
   }
   .status {
+    font-family: var(--mono);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.7rem;
-    padding: 0.15rem 0.5rem;
+    letter-spacing: 2px;
+    font-size: 10px;
+    padding: 3px 8px;
     border-radius: 2px;
-    border: 1px solid #2a2a2a;
-    background: #111;
-    color: #c0c0c0;
+    border: 1px solid var(--ground-4);
+    background: var(--ground-2);
+    color: var(--text-2);
   }
   .status-queued {
-    color: #aaa;
+    color: var(--text-2);
   }
   .status-printing {
-    color: #6ab0ff;
-    border-color: #2c4d77;
+    color: var(--s-blue);
+    border-color: rgba(61, 148, 196, 0.4);
   }
   .status-ready {
-    color: #6aff8c;
-    border-color: #2d6a2d;
+    color: var(--s-green);
+    border-color: rgba(78, 174, 110, 0.4);
   }
   .status-claimed {
-    color: #888;
+    color: var(--text-3);
   }
   .status-failed {
-    color: #ff6b6b;
-    border-color: #6a2d2d;
+    color: var(--s-rose);
+    border-color: rgba(212, 112, 122, 0.4);
   }
   .actions {
     display: flex;
-    gap: 0.35rem;
+    gap: 6px;
     flex-wrap: wrap;
   }
   .btn {
-    background: #1a1a1a;
-    color: #e5e5e5;
-    border: 1px solid #2a2a2a;
-    padding: 0.3rem 0.6rem;
-    font-size: 0.75rem;
+    background: var(--ground-2);
+    color: var(--text-1);
+    border: 1px solid var(--ground-4);
+    padding: 5px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
     cursor: pointer;
+    transition: background 0.15s, color 0.15s;
   }
   .btn:hover:not(:disabled) {
-    background: #222;
+    background: var(--ground-3);
+    color: var(--text-0);
   }
   .btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
   .btn-printing {
-    border-color: #2c4d77;
-    color: #8ec5ff;
+    border-color: rgba(61, 148, 196, 0.4);
+    color: var(--s-blue);
   }
   .btn-ready {
-    border-color: #2d6a2d;
-    color: #8efaa3;
+    border-color: rgba(78, 174, 110, 0.4);
+    color: var(--s-green);
   }
   .btn-claimed {
-    border-color: #444;
+    border-color: var(--ground-4);
   }
   .btn-failed {
-    border-color: #6a2d2d;
-    color: #ff8a8a;
+    border-color: rgba(212, 112, 122, 0.4);
+    color: var(--s-rose);
   }
 </style>

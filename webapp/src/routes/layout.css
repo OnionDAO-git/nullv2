@@ -1,0 +1,144 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/* ═══════════════════════════════════════════════════════
+   NULL CITY / ONION DAO — DESIGN TOKEN SYSTEM
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Register shard colors & fonts in Tailwind theme ── */
+@theme {
+  --font-serif: 'Outfit', system-ui, sans-serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  --color-s-blue: #3D94C4;
+  --color-s-green: #4EAE6E;
+  --color-s-gold: #E4B840;
+  --color-s-rose: #D4707A;
+  --color-s-teal: #58C0B4;
+  --color-s-amber: #F0B84C;
+  --color-s-mauve: #B080A0;
+  --color-s-bone: #3A342C;
+}
+
+/* ═══════════════════════════════════════════
+   DEFAULT: NULL CITY (DARK THEME)
+   ═══════════════════════════════════════════ */
+:root {
+  /* ── Semantic Ground Scale ── */
+  --ground-0: #0E0C0A;
+  --ground-1: #161310;
+  --ground-2: #1E1A16;
+  --ground-3: #28231E;
+  --ground-4: #342D26;
+  --ground-5: #443B30;
+  --ground-6: #5C5040;
+
+  /* ── Semantic Text Scale ── */
+  --text-0: #EDE8E0;
+  --text-1: #D4CDB8;
+  --text-2: #B0A690;
+  --text-3: #8A7E6A;
+
+  /* ── Legacy Aliases (for porting) ── */
+  --void: var(--ground-0);
+  --crypt: var(--ground-1);
+  --nave: var(--ground-2);
+  --chapel: var(--ground-3);
+  --alcove: var(--ground-4);
+  --worn: var(--ground-5);
+  --weathered: var(--ground-6);
+  --chalk: var(--text-0);
+  --chalk-2: var(--text-1);
+  --chalk-3: var(--text-2);
+  --chalk-4: var(--text-3);
+
+  /* ── The Shard Palette (constant across themes) ── */
+  --s-blue: #3D94C4;
+  --s-green: #4EAE6E;
+  --s-gold: #E4B840;
+  --s-rose: #D4707A;
+  --s-teal: #58C0B4;
+  --s-amber: #F0B84C;
+  --s-mauve: #B080A0;
+  --s-bone: #3A342C;
+
+  /* ── Shard Glow variants ── */
+  --g-blue: rgba(61,148,196,.10);
+  --g-green: rgba(78,174,110,.10);
+  --g-gold: rgba(228,184,64,.10);
+  --g-rose: rgba(212,112,122,.10);
+  --g-teal: rgba(88,192,180,.10);
+  --g-mauve: rgba(176,128,160,.10);
+
+  /* ── Grout ── */
+  --grout: var(--ground-0);
+  --grout-narrow: 1px;
+
+  /* ── Type ── */
+  --serif: 'Outfit', system-ui, sans-serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --mono: 'Space Mono', monospace;
+
+  /* ── Selection ── */
+  --selection-bg: rgba(228,184,64,.22);
+}
+
+/* ═══════════════════════════════════════════
+   ONION DAO (LIGHT THEME) OVERRIDES
+   ═══════════════════════════════════════════ */
+[data-brand="onion-dao"] {
+  --ground-0: #EDE8E0;
+  --ground-1: #E4DED4;
+  --ground-2: #D8D0C4;
+  --ground-3: #C8BEA8;
+  --ground-4: #B0A690;
+  --ground-5: #8A7E6A;
+  --ground-6: #706858;
+
+  --text-0: #1A1714;
+  --text-1: #2C2820;
+  --text-2: #4A4438;
+  --text-3: #706858;
+
+  --grout: #C8BEA8;
+
+  --selection-bg: rgba(61,148,196,.18);
+}
+
+/* ═══════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  background: var(--ground-0);
+  color: var(--text-1);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  background: var(--ground-0);
+  color: var(--text-1);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--text-0);
+}
+
+/* ═══════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

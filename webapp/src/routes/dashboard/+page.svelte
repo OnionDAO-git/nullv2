@@ -1,71 +1,108 @@
 <script lang="ts">
+  import SectionTag from '$lib/components/SectionTag.svelte';
+
   let { data } = $props();
 </script>
 
-<section>
-  <h2>Factions</h2>
+<section class="factions">
+  <SectionTag label="Factions" />
+
   <div class="grid">
     {#each data.standing as row (row.faction.id)}
-      <article style:border-color={row.faction.color}>
-        <header>
+      <article class="card" style:--accent={row.faction.color}>
+        <header class="card__head">
           <h3>{row.faction.name}</h3>
           <span class="tier">{row.tier}</span>
         </header>
         <p class="motto">{row.faction.motto}</p>
-        <p class="points">{row.points} standing points</p>
+        <p class="points">
+          <span class="points__n">{row.points}</span>
+          <span class="points__l">standing</span>
+        </p>
       </article>
     {/each}
   </div>
 </section>
 
 <style>
-  section {
-    padding: 2rem 1.5rem;
-    max-width: 64rem;
+  .factions {
+    max-width: 1100px;
     margin: 0 auto;
+    padding: 64px 32px;
   }
-  h2 {
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #999;
-    margin: 0 0 1rem;
-  }
+
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
   }
-  article {
-    border: 1px solid #2a2a2a;
-    border-left-width: 4px;
-    padding: 1rem 1.25rem;
-    background: #111;
+
+  .card {
+    background: var(--ground-1);
+    border: 1px solid var(--ground-3);
+    border-left: 3px solid var(--accent, var(--ground-5));
+    padding: 24px;
+    transition: border-color 0.2s, background 0.2s;
   }
-  article header {
+
+  .card:hover {
+    background: var(--ground-2);
+    border-color: var(--ground-4);
+    border-left-color: var(--accent, var(--ground-5));
+  }
+
+  .card__head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    gap: 12px;
+    margin-bottom: 12px;
   }
+
   h3 {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-0);
     margin: 0;
-    font-size: 1.1rem;
   }
+
   .tier {
-    font-size: 0.75rem;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #888;
+    color: var(--text-3);
   }
+
   .motto {
+    font-family: var(--serif);
     font-style: italic;
-    color: #c0c0c0;
-    margin: 0.5rem 0;
+    font-size: 14px;
+    color: var(--text-2);
+    margin: 0 0 16px;
+    line-height: 1.5;
   }
+
   .points {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
     margin: 0;
-    color: #777;
+  }
+
+  .points__n {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--text-1);
     font-variant-numeric: tabular-nums;
+  }
+
+  .points__l {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-3);
   }
 </style>

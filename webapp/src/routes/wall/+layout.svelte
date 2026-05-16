@@ -11,15 +11,15 @@
   :global(body) {
     margin: 0;
     padding: 0;
-    background: #000;
+    background: var(--ground-0);
     overflow: hidden;
   }
   .wall-root {
     width: 100vw;
     height: 100vh;
-    background: #000;
-    color: #e5e5e5;
+    background: var(--ground-0);
+    color: var(--text-1);
     overflow: hidden;
-    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--sans);
   }
 </style>
