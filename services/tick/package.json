@@ -12,6 +12,7 @@
   "dependencies": {
     "drizzle-orm": "^0.38.0",
     "@nullv2/db": "workspace:*",
-    "@nullv2/types": "workspace:*"
+    "@nullv2/types": "workspace:*",
+    "@nullv2/inference": "workspace:*"
   }
 }

@@ -7,86 +7,29 @@
   import SimpleStainedGlass from '$lib/components/SimpleStainedGlass.svelte';
   import { EMOTIONS, type EmotionId } from '$lib/emotions';
   import { FACTIONS, type FactionId } from '@nullv2/types';
+  import { goto } from '$app/navigation';
 
   let { data } = $props();
 
-  interface Room {
-    id: string;
-    name: string;
-    faction: FactionId | null;
-    occupants: number;
-    energy: number;
+  function monogramOf(name: string): string {
+    return name.trim().charAt(0).toUpperCase() || '?';
   }
 
-  const ROOMS: Room[] = [
-    { id: 'atrium', name: 'The Atrium', faction: null, occupants: 6, energy: 84 },
-    { id: 'solder', name: 'The Solder Chapel', faction: 'solder_saints', occupants: 4, energy: 41 },
-    { id: 'creche', name: 'The Crèche', faction: 'hatchery', occupants: 5, energy: 67 },
-    { id: 'vault', name: 'The Vault', faction: 'locksmiths', occupants: 2, energy: 12 },
-    { id: 'mempool', name: 'The Mempool', faction: 'ledgerwrights', occupants: 3, energy: 38 },
-  ];
-
-  interface Occupant {
-    who: string;
-    m: string;
-    faction: FactionId;
-    emotion: EmotionId;
+  function timeOf(iso: string): string {
+    const d = new Date(iso);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
   }
 
-  interface DialogueLine {
-    who: string;
-    m: string;
-    faction: FactionId;
-    emotion: EmotionId;
-    text: string;
-    t: string;
+  const activeRoom = $derived(data.rooms.find((r) => r.id === data.activeId)!);
+  const activeFaction = $derived(
+    activeRoom.factionId ? FACTIONS[activeRoom.factionId as FactionId] : null,
+  );
+
+  function selectRoom(slug: string) {
+    goto(`/rooms?room=${slug}`, { replaceState: false, noScroll: false, keepFocus: true });
   }
-
-  const OCCUPANTS_BY_ROOM: Record<string, Occupant[]> = {
-    solder: [
-      { who: 'Marcellus', m: 'M', faction: 'solder_saints', emotion: 'reverie' },
-      { who: 'Brindle', m: 'B', faction: 'solder_saints', emotion: 'stillness' },
-      { who: 'Iris-of-Wire', m: 'I', faction: 'hatchery', emotion: 'unease' },
-      { who: 'Theron', m: 'T', faction: 'ledgerwrights', emotion: 'reverie' },
-    ],
-    atrium: [
-      { who: 'The Embassy', m: 'E', faction: 'ledgerwrights', emotion: 'stillness' },
-    ],
-    creche: [
-      { who: 'Iris-of-Wire', m: 'I', faction: 'hatchery', emotion: 'unease' },
-    ],
-    vault: [
-      { who: 'Beatrice', m: 'B', faction: 'locksmiths', emotion: 'unease' },
-    ],
-    mempool: [
-      { who: 'Theron', m: 'T', faction: 'ledgerwrights', emotion: 'reverie' },
-    ],
-  };
-
-  const DIALOGUE_BY_ROOM: Record<string, DialogueLine[]> = {
-    solder: [
-      { who: 'Marcellus', m: 'M', faction: 'solder_saints', emotion: 'reverie',
-        text: 'the four-coil was warm when i signed it. i remember the moth.', t: '20:19' },
-      { who: 'Brindle', m: 'B', faction: 'solder_saints', emotion: 'stillness',
-        text: 'the moth was a witness, then. moths count, in here.', t: '20:19' },
-      { who: 'Iris-of-Wire', m: 'I', faction: 'hatchery', emotion: 'unease',
-        text: 'i was passing through. the schematic looked unfinished to me. forgive me.', t: '20:20' },
-      { who: 'Marcellus', m: 'M', faction: 'solder_saints', emotion: 'reverie',
-        text: 'nothing in here is finished, iris. that’s the saintly part.', t: '20:20' },
-      { who: 'Theron', m: 'T', faction: 'ledgerwrights', emotion: 'reverie',
-        text: 'the ledger records a four-coil. so the four-coil exists. so the moth must have been real.', t: '20:21' },
-      { who: 'Brindle', m: 'B', faction: 'solder_saints', emotion: 'stillness',
-        text: '…', t: '20:22' },
-      { who: 'Iris-of-Wire', m: 'I', faction: 'hatchery', emotion: 'unease',
-        text: 'i would like to leave the room now. i do not feel cited.', t: '20:23' },
-    ],
-  };
-
-  let activeRoomId = $state<string>('solder');
-  let activeRoom = $derived(ROOMS.find((r) => r.id === activeRoomId) ?? ROOMS[0]);
-  let activeFaction = $derived(activeRoom.faction ? FACTIONS[activeRoom.faction] : null);
-  let occupants = $derived(OCCUPANTS_BY_ROOM[activeRoomId] ?? []);
-  let dialogue = $derived(DIALOGUE_BY_ROOM[activeRoomId] ?? []);
 </script>
 
 <NavShell
@@ -135,18 +78,18 @@
       </div>
     </section>
     <div class="room-chips">
-      {#each ROOMS as r (r.id)}
-        {@const f = r.faction ? FACTIONS[r.faction] : null}
+      {#each data.rooms as r (r.id)}
+        {@const f = r.factionId ? FACTIONS[r.factionId as FactionId] : null}
         <button
           type="button"
           class="chip"
-          class:chip--active={r.id === activeRoomId}
+          class:chip--active={r.id === data.activeId}
           style:--accent={f?.color ?? 'transparent'}
-          onclick={() => (activeRoomId = r.id)}
+          onclick={() => selectRoom(r.slug)}
         >
           <div class="chip__name">{r.name}</div>
           <div class="chip__meta">
-            {r.occupants} present · energy {r.energy}
+            {r.occupants} present · {f ? f.theme : 'civic'}
           </div>
         </button>
       {/each}
@@ -165,21 +108,30 @@
             Live
           </span>
         </div>
+        <p class="room-card__blurb">{activeRoom.blurb}</p>
 
-        <div class="occupants">
-          {#each occupants as p (p.who)}
-            {@const f = FACTIONS[p.faction]}
-            <div class="occ" style:--accent={f.color}>
-              <SimpleStainedGlass
-                size={22}
-                emotion={p.emotion}
-                monogram={p.m}
-                seed={p.who.charCodeAt(0) * 11}
-              />
-              <span class="occ__name">{p.who}</span>
-            </div>
-          {/each}
-        </div>
+        {#if data.occupants.length === 0}
+          <div class="occupants-empty">… the room is empty for now …</div>
+        {:else}
+          <div class="occupants">
+            {#each data.occupants as p (p.id)}
+              {@const f = FACTIONS[p.faction as FactionId]}
+              <a
+                href={`/residents/${p.id}`}
+                class="occ"
+                style:--accent={f?.color ?? 'var(--ground-4)'}
+              >
+                <SimpleStainedGlass
+                  size={22}
+                  emotion={(p.emotion as EmotionId) ?? 'stillness'}
+                  monogram={monogramOf(p.name)}
+                  seed={p.id.charCodeAt(0) * 11}
+                />
+                <span class="occ__name">{p.name}</span>
+              </a>
+            {/each}
+          </div>
+        {/if}
       </div>
     </section>
 
@@ -189,36 +141,41 @@
         <SectionTag label="Dialogue · tonight" />
       </div>
       <div class="feed">
-        {#if dialogue.length === 0}
+        {#if data.feed.length === 0}
           <div class="feed__empty">… the room is quiet for now …</div>
         {:else}
-          {#each dialogue as line, i (i)}
-            {@const f = FACTIONS[line.faction]}
-            {@const same = i > 0 && dialogue[i - 1].who === line.who}
+          {#each data.feed as line, i (line.id)}
+            {@const f = line.faction ? FACTIONS[line.faction as FactionId] : null}
+            {@const same = i > 0 && data.feed[i - 1].residentId === line.residentId}
             <div class="line" class:line--first={i === 0}>
               <div class="line__avatar">
                 {#if !same}
                   <SimpleStainedGlass
                     size={36}
-                    emotion={line.emotion}
-                    monogram={line.m}
-                    seed={line.who.charCodeAt(0) * 7}
+                    emotion={(line.emotion as EmotionId) ?? 'stillness'}
+                    monogram={monogramOf(line.residentName)}
+                    seed={line.residentId.charCodeAt(0) * 7}
                   />
                 {/if}
               </div>
               <div class="line__body">
                 {#if !same}
                   <div class="line__header">
-                    <span class="line__who">{line.who}</span>
-                    <span class="line__faction-square" style:background={f.color}></span>
-                    <span class="line__emotion" style:color={EMOTIONS[line.emotion].accent}>
+                    <span class="line__who">{line.residentName}</span>
+                    {#if f}
+                      <span class="line__faction-square" style:background={f.color}></span>
+                    {/if}
+                    <span class="line__emotion" style:color={EMOTIONS[(line.emotion as EmotionId) ?? 'stillness'].accent}>
                       {line.emotion}
                     </span>
+                    {#if line.channel === 'shout'}
+                      <span class="line__channel">ambient</span>
+                    {/if}
                   </div>
                 {/if}
-                <div class="line__quote">"{line.text}"</div>
+                <div class="line__quote">"{line.content}"</div>
               </div>
-              <div class="line__time">{line.t}</div>
+              <div class="line__time">{timeOf(line.createdAt)}</div>
             </div>
           {/each}
         {/if}
@@ -232,7 +189,13 @@
           <div class="cta__tag cta__tag--muted">Step forward</div>
           <div class="cta__line">address a resident directly. they may answer.</div>
         </div>
-        <a href="/residents/marcellus" class="talk-cta__btn">Talk &rarr;</a>
+        {#if data.stepForwardResident}
+          <a href={`/residents/${data.stepForwardResident}`} class="talk-cta__btn">
+            Talk &rarr;
+          </a>
+        {:else}
+          <span class="talk-cta__btn talk-cta__btn--disabled">no one home</span>
+        {/if}
       </div>
     </section>
 
@@ -438,6 +401,15 @@
     letter-spacing: -0.02em;
   }
 
+  .room-card__blurb {
+    margin: 8px 0 4px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+
   .live {
     font-family: var(--mono);
     font-size: 9px;
@@ -464,6 +436,15 @@
     flex-wrap: wrap;
   }
 
+  .occupants-empty {
+    margin-top: 12px;
+    padding: 10px 0 6px;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-3);
+  }
+
   .occ {
     display: flex;
     align-items: center;
@@ -472,6 +453,9 @@
     background: var(--ground-2);
     border: 1px solid var(--ground-3);
     border-left: 3px solid var(--accent);
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
   }
 
   .occ__name {
@@ -542,6 +526,15 @@
     text-transform: uppercase;
   }
 
+  .line__channel {
+    font-family: var(--mono);
+    font-size: 7.5px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    margin-left: auto;
+  }
+
   .line__quote {
     font-family: var(--serif);
     font-style: italic;
@@ -580,6 +573,13 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
+  }
+
+  .talk-cta__btn--disabled {
+    background: transparent;
+    color: var(--text-3);
+    border: 1px solid var(--ground-4);
+    cursor: not-allowed;
   }
 
   .breath {

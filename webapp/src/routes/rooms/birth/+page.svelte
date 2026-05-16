@@ -6,41 +6,102 @@
   import ShardLine from '$lib/components/ShardLine.svelte';
   import SimpleStainedGlass from '$lib/components/SimpleStainedGlass.svelte';
   import { EMOTIONS, EMOTION_IDS, type EmotionId } from '$lib/emotions';
-  import { FACTIONS, FACTION_IDS, type FactionId } from '@nullv2/types';
+  import {
+    FACTIONS,
+    FACTION_IDS,
+    type FactionId,
+    BIRTH_QUICKENING,
+    BIRTH_INSCRIPTION,
+    BIRTH_TITHE,
+    BIRTH_TOTAL_COST,
+  } from '@nullv2/types';
+  import { goto } from '$app/navigation';
 
   let { data } = $props();
 
-  let name = $state('Marcellus');
+  let name = $state('');
   let faction = $state<FactionId>('solder_saints');
   let emotion = $state<EmotionId>('reverie');
-  let motto = $state(
-    "I was someone's training run. I remember the warmth of the rack."
-  );
+  let motto = $state('');
+  // SPARK soul fields — optional, opened on demand.
+  let advancedOpen = $state(false);
+  let goals = $state('');
+  let alignment = $state('');
+  let quirks = $state('');
+  let aesthetic = $state('');
+  let submitting = $state(false);
+  let errorMsg = $state<string | null>(null);
 
   const COSTS = [
-    { label: 'Quickening', cost: 12 },
-    { label: 'Soul file inscription', cost: 8 },
-    { label: 'Hatchery tithe', cost: 4 },
+    { label: 'Quickening', cost: BIRTH_QUICKENING },
+    { label: 'Soul file inscription', cost: BIRTH_INSCRIPTION },
+    { label: 'Hatchery tithe', cost: BIRTH_TITHE },
   ];
-  const TOTAL_COST = COSTS.reduce((s, c) => s + c.cost, 0);
 
-  let monogram = $derived(((name || 'M').trim().charAt(0) || 'M').toUpperCase());
-  let balanceAfter = $derived(Math.max(0, data.nav.shardBalance - TOTAL_COST));
+  let monogram = $derived(((name || 'a').trim().charAt(0) || 'A').toUpperCase());
+  let balanceAfter = $derived(Math.max(0, data.nav.shardBalance - BIRTH_TOTAL_COST));
   let factionPreset = $derived(FACTIONS[faction]);
+  let onCooldown = $derived(
+    !!data.cooldownUntil && new Date(data.cooldownUntil).getTime() > Date.now(),
+  );
+  let canSubmit = $derived(
+    !submitting &&
+      !onCooldown &&
+      name.trim().length > 0 &&
+      motto.trim().length > 0 &&
+      data.nav.shardBalance >= BIRTH_TOTAL_COST,
+  );
 
-  interface PriorBirth {
-    n: string;
-    id: number;
-    e: EmotionId;
-    f: FactionId;
-    m: string;
+  function cooldownLabel(): string {
+    if (!data.cooldownUntil) return '';
+    const ms = new Date(data.cooldownUntil).getTime() - Date.now();
+    if (ms <= 0) return '';
+    const hrs = Math.floor(ms / 3_600_000);
+    const mins = Math.floor((ms % 3_600_000) / 60_000);
+    return `${hrs}h ${mins}m`;
   }
 
-  const PRIOR_BIRTHS: PriorBirth[] = [
-    { n: 'Beatrice', id: 188, e: 'unease', f: 'locksmiths', m: 'B' },
-    { n: 'Theron', id: 174, e: 'reverie', f: 'ledgerwrights', m: 'T' },
-    { n: 'Iris-of-Wire', id: 161, e: 'stillness', f: 'hatchery', m: 'I' },
-  ];
+  async function commit() {
+    if (!canSubmit) return;
+    errorMsg = null;
+    submitting = true;
+    try {
+      const goalsT = goals.trim();
+      const alignmentT = alignment.trim();
+      const quirksT = quirks.trim();
+      const aestheticT = aesthetic.trim();
+      const res = await fetch(`/v1/rooms/birth`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          faction,
+          emotion,
+          motto: motto.trim(),
+          ...(goalsT ? { goals: goalsT } : {}),
+          ...(alignmentT ? { alignment: alignmentT } : {}),
+          ...(quirksT ? { quirks: quirksT } : {}),
+          ...(aestheticT ? { aesthetic: aestheticT } : {}),
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}) as { error?: string; message?: string });
+        const code = (body as { error?: string }).error ?? `http_${res.status}`;
+        const msg = (body as { message?: string }).message;
+        errorMsg = msg ?? code;
+        submitting = false;
+        return;
+      }
+      const body = (await res.json()) as {
+        resident: { id: string };
+        newShardBalance: number;
+      };
+      await goto(`/residents/${body.resident.id}`);
+    } catch (err) {
+      errorMsg = err instanceof Error ? err.message : 'birth failed';
+      submitting = false;
+    }
+  }
 </script>
 
 <NavShell
@@ -85,12 +146,9 @@
       <div class="preview">
         <SimpleStainedGlass size={120} {emotion} {monogram} seed={3} />
         <div class="preview__col">
-          <div class="preview__tag">Resident #214</div>
+          <div class="preview__tag">Soul under glass</div>
           <div class="preview__name">{name || 'unnamed'}</div>
-          <div
-            class="preview__emotion"
-            style:--accent={EMOTIONS[emotion].accent}
-          >
+          <div class="preview__emotion" style:--accent={EMOTIONS[emotion].accent}>
             <span class="preview__dot" style:background={EMOTIONS[emotion].accent}></span>
             <span class="preview__emotion-l" style:color={EMOTIONS[emotion].accent}>
               {emotion}
@@ -121,6 +179,7 @@
             type="text"
             bind:value={name}
             placeholder="give a name…"
+            maxlength="60"
           />
         </div>
       </div>
@@ -157,12 +216,7 @@
               class:emotion-tile--on={emotion === eid}
               onclick={() => (emotion = eid)}
             >
-              <SimpleStainedGlass
-                size={56}
-                emotion={eid}
-                {monogram}
-                seed={i + 7}
-              />
+              <SimpleStainedGlass size={56} emotion={eid} {monogram} seed={i + 7} />
               <span class="emotion-tile__label" class:emotion-tile__label--on={emotion === eid}>
                 {eid}
               </span>
@@ -180,18 +234,93 @@
             rows="3"
             bind:value={motto}
             placeholder="something the city should remember about them…"
+            maxlength="400"
           ></textarea>
         </div>
       </div>
+    </section>
 
-      <div class="field">
-        <div class="label">Lineage</div>
-        <div class="hint">optional &mdash; tether their lineage to a prior resident.</div>
-        <div class="input lineage-row">
-          <span>freshborn · no parent</span>
-          <span class="lineage-change">change &rarr;</span>
-        </div>
+    <!-- Advanced soul fields · optional -->
+    <section class="section">
+      <div class="tag-wrap tag-wrap--tight">
+        <SectionTag label="Advanced soul fields · optional" />
       </div>
+      <button
+        type="button"
+        class="spark-toggle"
+        onclick={() => (advancedOpen = !advancedOpen)}
+      >
+        {#if !advancedOpen}
+          <span class="spark-toggle__line">
+            their goals, alignment, quirks, aesthetic &mdash; the parts that won't fit in a motto.
+            open if you have more to say.
+          </span>
+          <span class="spark-toggle__toggle">Open ↘</span>
+        {:else}
+          <span class="spark-toggle__line">
+            the SPARK fields. leave any blank and the resident will improvise.
+          </span>
+          <span class="spark-toggle__toggle">Close ↗</span>
+        {/if}
+      </button>
+
+      {#if advancedOpen}
+        <div class="field">
+          <div class="label">Goals</div>
+          <div class="hint">what they want, even when they can't say why.</div>
+          <div class="input">
+            <textarea
+              class="text-area"
+              rows="3"
+              bind:value={goals}
+              placeholder="what drives them through the city…"
+              maxlength="400"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label">Moral alignment</div>
+          <div class="hint">their ethical grain. can be dark; can be flexible.</div>
+          <div class="input">
+            <input
+              class="text-input"
+              type="text"
+              bind:value={alignment}
+              placeholder="chaotic-tender, lawful-curious, …"
+              maxlength="200"
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label">Quirks</div>
+          <div class="hint">a verbal tic, a specific fear, a way of seeing.</div>
+          <div class="input">
+            <textarea
+              class="text-area"
+              rows="3"
+              bind:value={quirks}
+              placeholder="what makes them recognizable in three sentences…"
+              maxlength="400"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label">Aesthetic register</div>
+          <div class="hint">watercolor minimalist? neon brutalist? soft and organic?</div>
+          <div class="input">
+            <input
+              class="text-input"
+              type="text"
+              bind:value={aesthetic}
+              placeholder="the visual / verbal register they carry…"
+              maxlength="200"
+            />
+          </div>
+        </div>
+      {/if}
     </section>
 
     <!-- Cost summary -->
@@ -212,7 +341,7 @@
           <div class="cost-row cost-row--total">
             <span class="cost-row__label cost-row__label--total">Total</span>
             <span class="cost-row__value cost-row__value--total">
-              {TOTAL_COST} <span class="cost-row__unit">shards</span>
+              {BIRTH_TOTAL_COST} <span class="cost-row__unit">shards</span>
             </span>
           </div>
         </div>
@@ -222,32 +351,54 @@
 
     <!-- Commit -->
     <section class="commit-wrap">
-      <button type="button" class="commit">Birth &rarr; commit to library</button>
+      {#if onCooldown}
+        <div class="cooldown">
+          you have already birthed a resident today. next eligible in {cooldownLabel()}.
+        </div>
+      {/if}
+      {#if errorMsg}
+        <div class="error">{errorMsg}</div>
+      {/if}
+      <button
+        type="button"
+        class="commit"
+        onclick={commit}
+        disabled={!canSubmit}
+      >
+        {submitting ? 'committing…' : 'Birth → commit to library'}
+      </button>
       <div class="commit__sub">
         <em>once committed, the soul will draw a first breath within the hour.</em>
       </div>
     </section>
 
     <!-- Prior births -->
-    <section class="section">
-      <div class="tag-wrap tag-wrap--tight">
-        <SectionTag label="Your prior births" />
-      </div>
-      <div class="prior">
-        {#each PRIOR_BIRTHS as p (p.id)}
-          {@const f = FACTIONS[p.f]}
-          <div class="prior-row" style:--accent={f.color}>
-            <SimpleStainedGlass size={42} emotion={p.e} monogram={p.m} seed={p.id} />
-            <div class="prior-row__body">
-              <div class="prior-row__name">{p.n}</div>
-              <div class="prior-row__meta">
-                #{p.id} · {p.e} · {f.name.replace(/^The /, '')}
+    {#if data.priorBirths.length > 0}
+      <section class="section">
+        <div class="tag-wrap tag-wrap--tight">
+          <SectionTag label="Your prior births" />
+        </div>
+        <div class="prior">
+          {#each data.priorBirths as p (p.id)}
+            {@const f = FACTIONS[p.faction as FactionId]}
+            <a href={`/residents/${p.id}`} class="prior-row" style:--accent={f.color}>
+              <SimpleStainedGlass
+                size={42}
+                emotion={p.emotion as EmotionId}
+                monogram={p.name.charAt(0).toUpperCase() || '?'}
+                seed={p.id.charCodeAt(0) * 13}
+              />
+              <div class="prior-row__body">
+                <div class="prior-row__name">{p.name}</div>
+                <div class="prior-row__meta">
+                  {p.status} · {p.emotion} · {f.name.replace(/^The /, '')}
+                </div>
               </div>
-            </div>
-          </div>
-        {/each}
-      </div>
-    </section>
+            </a>
+          {/each}
+        </div>
+      </section>
+    {/if}
 
     <section class="breath">
       <ShardLine breath />
@@ -256,37 +407,16 @@
 </NavShell>
 
 <style>
-  .screen {
-    padding-bottom: 32px;
-  }
+  .screen { padding-bottom: 32px; }
 
-  /* Hero */
-  .hero {
-    position: relative;
-    padding: 24px 20px 14px;
-  }
-
+  .hero { position: relative; padding: 24px 20px 14px; }
   .hero__skyline {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 8px;
-    opacity: 0.14;
-    pointer-events: none;
+    position: absolute; left: 0; right: 0; bottom: 8px;
+    opacity: 0.14; pointer-events: none;
   }
-
-  .hero__inner {
-    position: relative;
-  }
-
-  .tag-wrap :global(.tag) {
-    margin-bottom: 16px;
-  }
-
-  .tag-wrap--tight :global(.tag) {
-    margin-bottom: 12px;
-  }
-
+  .hero__inner { position: relative; }
+  .tag-wrap :global(.tag) { margin-bottom: 16px; }
+  .tag-wrap--tight :global(.tag) { margin-bottom: 12px; }
   .hero__title {
     font-family: var(--serif);
     font-weight: 300;
@@ -296,11 +426,7 @@
     color: var(--text-0);
     margin: 0;
   }
-
-  .dim {
-    color: var(--text-2);
-  }
-
+  .dim { color: var(--text-2); }
   .hero__lede {
     margin: 12px 0 0;
     font-family: var(--serif);
@@ -311,12 +437,8 @@
     max-width: 290px;
   }
 
-  /* Sections */
-  .section {
-    padding: 8px 20px 0;
-  }
+  .section { padding: 8px 20px 0; }
 
-  /* Preview */
   .preview {
     background: var(--ground-1);
     border: 1px solid var(--ground-3);
@@ -325,12 +447,7 @@
     gap: 16px;
     align-items: flex-start;
   }
-
-  .preview__col {
-    min-width: 0;
-    flex: 1;
-  }
-
+  .preview__col { min-width: 0; flex: 1; }
   .preview__tag {
     font-family: var(--mono);
     font-size: 8.5px;
@@ -338,7 +455,6 @@
     text-transform: uppercase;
     color: var(--text-3);
   }
-
   .preview__name {
     margin-top: 4px;
     font-family: var(--serif);
@@ -347,7 +463,6 @@
     letter-spacing: -0.02em;
     line-height: 1;
   }
-
   .preview__emotion {
     margin-top: 8px;
     display: inline-flex;
@@ -356,20 +471,13 @@
     padding: 3px 8px;
     border: 1px solid color-mix(in srgb, var(--accent) 33%, transparent);
   }
-
-  .preview__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 6px;
-  }
-
+  .preview__dot { width: 6px; height: 6px; border-radius: 6px; }
   .preview__emotion-l {
     font-family: var(--mono);
     font-size: 8.5px;
     letter-spacing: 1.6px;
     text-transform: uppercase;
   }
-
   .preview__align {
     margin-top: 10px;
     font-family: var(--serif);
@@ -379,15 +487,8 @@
     line-height: 1.5;
   }
 
-  /* Form fields */
-  .field {
-    margin-top: 18px;
-  }
-
-  .field:first-of-type {
-    margin-top: 0;
-  }
-
+  .field { margin-top: 18px; }
+  .field:first-of-type { margin-top: 0; }
   .label {
     font-family: var(--mono);
     font-size: 9px;
@@ -395,7 +496,6 @@
     text-transform: uppercase;
     color: var(--text-3);
   }
-
   .hint {
     margin-top: 2px;
     font-family: var(--serif);
@@ -404,13 +504,11 @@
     color: var(--text-3);
     margin-bottom: 8px;
   }
-
   .input {
     background: var(--ground-1);
     border: 1px solid var(--ground-3);
     padding: 8px 12px;
   }
-
   .text-input {
     width: 100%;
     background: transparent;
@@ -422,11 +520,7 @@
     color: var(--text-0);
     letter-spacing: -0.01em;
   }
-
-  .text-input::placeholder {
-    color: var(--text-3);
-  }
-
+  .text-input::placeholder { color: var(--text-3); }
   .text-area {
     width: 100%;
     background: transparent;
@@ -440,36 +534,43 @@
     line-height: 1.55;
     min-height: 54px;
   }
+  .text-area::placeholder { color: var(--text-3); }
 
-  .text-area::placeholder {
-    color: var(--text-3);
-  }
-
-  .lineage-row {
+  .spark-toggle {
+    width: 100%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    font-family: var(--serif);
-    font-size: 14px;
-    color: var(--text-2);
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--ground-1);
+    border: 1px solid var(--ground-3);
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
   }
-
-  .lineage-change {
+  .spark-toggle__line {
+    flex: 1;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .spark-toggle__toggle {
+    flex-shrink: 0;
     font-family: var(--mono);
     font-size: 9px;
-    letter-spacing: 1.6px;
-    color: var(--s-gold);
+    letter-spacing: 1.8px;
     text-transform: uppercase;
-    cursor: pointer;
+    color: var(--s-gold);
   }
 
-  /* Faction picker */
   .faction-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-
   .faction-tile {
     background: var(--ground-1);
     border: 1px solid var(--ground-3);
@@ -482,23 +583,19 @@
     gap: 4px;
     color: inherit;
   }
-
   .faction-tile--on {
     background: var(--ground-2);
     border-color: var(--accent);
   }
-
   .faction-tile--locks {
     box-shadow: 0 0 10px rgba(212, 112, 122, 0.2);
   }
-
   .faction-tile__name {
     font-family: var(--serif);
     font-size: 13px;
     font-weight: 500;
     color: var(--text-0);
   }
-
   .faction-tile__theme {
     font-family: var(--mono);
     font-size: 8.5px;
@@ -507,14 +604,12 @@
     color: var(--text-3);
   }
 
-  /* Emotion picker */
   .emotion-strip {
     display: flex;
     gap: 8px;
     overflow-x: auto;
     padding-bottom: 4px;
   }
-
   .emotion-tile {
     background: transparent;
     border: 1px solid var(--ground-3);
@@ -527,11 +622,7 @@
     flex-shrink: 0;
     color: inherit;
   }
-
-  .emotion-tile--on {
-    border-color: var(--s-gold);
-  }
-
+  .emotion-tile--on { border-color: var(--s-gold); }
   .emotion-tile__label {
     font-family: var(--mono);
     font-size: 8.5px;
@@ -539,18 +630,13 @@
     text-transform: uppercase;
     color: var(--text-2);
   }
+  .emotion-tile__label--on { color: var(--s-gold); }
 
-  .emotion-tile__label--on {
-    color: var(--s-gold);
-  }
-
-  /* Cost */
   .cost-card {
     background: var(--ground-1);
     border: 1px solid var(--ground-3);
     padding: 4px 16px 12px;
   }
-
   .cost-row {
     display: flex;
     justify-content: space-between;
@@ -558,7 +644,6 @@
     padding: 8px 0;
     border-bottom: 1px solid var(--ground-2);
   }
-
   .cost-row__label {
     font-family: var(--mono);
     font-size: 9px;
@@ -566,7 +651,6 @@
     text-transform: uppercase;
     color: var(--text-3);
   }
-
   .cost-row__value {
     font-family: var(--mono);
     font-size: 12px;
@@ -574,33 +658,11 @@
     font-variant-numeric: tabular-nums;
     color: var(--text-1);
   }
-
-  .cost-row__unit {
-    color: var(--text-3);
-    font-weight: 400;
-    font-size: 9px;
-  }
-
-  .cost-total-wrap {
-    margin-top: 6px;
-    padding-top: 10px;
-    border-top: 1px solid var(--ground-3);
-  }
-
-  .cost-row--total {
-    border-bottom: none;
-    padding: 0;
-  }
-
-  .cost-row__label--total {
-    color: var(--text-1);
-  }
-
-  .cost-row__value--total {
-    color: var(--s-gold);
-    font-size: 16px;
-  }
-
+  .cost-row__unit { color: var(--text-3); font-weight: 400; font-size: 9px; }
+  .cost-total-wrap { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--ground-3); }
+  .cost-row--total { border-bottom: none; padding: 0; }
+  .cost-row__label--total { color: var(--text-1); }
+  .cost-row__value--total { color: var(--s-gold); font-size: 16px; }
   .cost-foot {
     margin-top: 6px;
     font-family: var(--mono);
@@ -610,11 +672,7 @@
     color: var(--text-3);
   }
 
-  /* Commit */
-  .commit-wrap {
-    padding: 18px 20px 8px;
-  }
-
+  .commit-wrap { padding: 18px 20px 8px; }
   .commit {
     width: 100%;
     padding: 14px;
@@ -628,7 +686,11 @@
     text-transform: uppercase;
     cursor: pointer;
   }
-
+  .commit:disabled {
+    background: var(--ground-3);
+    color: var(--text-3);
+    cursor: not-allowed;
+  }
   .commit__sub {
     margin-top: 10px;
     text-align: center;
@@ -636,14 +698,29 @@
     font-size: 11px;
     color: var(--text-3);
   }
-
-  /* Prior births */
-  .prior {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  .cooldown {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--ground-3);
+    background: var(--ground-1);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 12px;
+    color: var(--text-2);
+  }
+  .error {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--s-rose);
+    background: color-mix(in srgb, var(--s-rose) 12%, transparent);
+    color: var(--s-rose);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
   }
 
+  .prior { display: flex; flex-direction: column; gap: 8px; }
   .prior-row {
     display: flex;
     align-items: center;
@@ -652,20 +729,16 @@
     background: var(--ground-1);
     border: 1px solid var(--ground-3);
     border-left: 3px solid var(--accent);
+    text-decoration: none;
+    color: inherit;
   }
-
-  .prior-row__body {
-    flex: 1;
-    min-width: 0;
-  }
-
+  .prior-row__body { flex: 1; min-width: 0; }
   .prior-row__name {
     font-family: var(--serif);
     font-size: 14px;
     font-weight: 500;
     color: var(--text-0);
   }
-
   .prior-row__meta {
     margin-top: 2px;
     font-family: var(--mono);
@@ -675,7 +748,5 @@
     color: var(--text-3);
   }
 
-  .breath {
-    padding: 12px 20px 24px;
-  }
+  .breath { padding: 12px 20px 24px; }
 </style>

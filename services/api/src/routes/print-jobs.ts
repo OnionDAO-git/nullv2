@@ -4,13 +4,16 @@ import { z } from 'zod';
 import { requireAdmin, type AuthVars } from '@nullv2/auth/hono';
 import type { Db } from '@nullv2/db';
 import { schema, external } from '@nullv2/db';
-import { ACHIEVEMENTS, type AchievementId } from '@nullv2/types';
-
-const PRINT_STATUSES = ['printing', 'ready', 'claimed', 'failed'] as const;
-type PrintStatus = (typeof PRINT_STATUSES)[number];
+import {
+  ACHIEVEMENTS,
+  PRINT_JOB_TRANSITION_IDS,
+  isPrintJobTerminal,
+  type AchievementId,
+  type PrintJobTransition,
+} from '@nullv2/types';
 
 const statusBodySchema = z.object({
-  status: z.enum(PRINT_STATUSES),
+  status: z.enum(PRINT_JOB_TRANSITION_IDS as unknown as [PrintJobTransition, ...PrintJobTransition[]]),
   notes: z.string().max(500).optional(),
 });
 
@@ -74,7 +77,7 @@ export function printJobsRoute(db: Db) {
       return c.json({ error: 'print_job_not_found' }, 404);
     }
 
-    const completedAt: Date | null = isTerminal(status) ? new Date() : existing.completedAt;
+    const completedAt: Date | null = isPrintJobTerminal(status) ? new Date() : existing.completedAt;
 
     const [updated] = await db
       .update(schema.printJobs)
@@ -90,8 +93,4 @@ export function printJobsRoute(db: Db) {
   });
 
   return r;
-}
-
-function isTerminal(status: PrintStatus): boolean {
-  return status === 'ready' || status === 'claimed';
 }

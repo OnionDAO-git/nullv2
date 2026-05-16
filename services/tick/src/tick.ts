@@ -1,6 +1,7 @@
 import { eq, and } from 'drizzle-orm';
 import { schema, type Db } from '@nullv2/db';
 import { killResident } from './death.ts';
+import { runAmbient, ambientEnabledFromEnv, type AmbientResult } from './ambient.ts';
 
 type Resident = typeof schema.residents.$inferSelect;
 
@@ -9,11 +10,12 @@ export interface TickResult {
   deaths: number;
   errors: number;
   durationMs: number;
+  ambient: AmbientResult;
 }
 
 export async function runTick(db: Db): Promise<TickResult> {
   const startedAt = Date.now();
-  const alive: Resident[] = await db
+  const aliveBefore: Resident[] = await db
     .select()
     .from(schema.residents)
     .where(eq(schema.residents.status, 'alive'));
@@ -21,7 +23,7 @@ export async function runTick(db: Db): Promise<TickResult> {
   let deaths = 0;
   let errors = 0;
 
-  for (const resident of alive) {
+  for (const resident of aliveBefore) {
     try {
       const died = await tickResident(db, resident);
       if (died) deaths++;
@@ -31,7 +33,33 @@ export async function runTick(db: Db): Promise<TickResult> {
     }
   }
 
-  return { processed: alive.length, deaths, errors, durationMs: Date.now() - startedAt };
+  // Re-query post-decay so newly-dead residents don't speak from the grave.
+  const stillAlive: Resident[] = await db
+    .select()
+    .from(schema.residents)
+    .where(eq(schema.residents.status, 'alive'));
+
+  let ambient: AmbientResult = {
+    attempted: 0,
+    succeeded: 0,
+    failed: 0,
+    dominantHist: { hunger: 0, safety: 0, social: 0, purpose: 0 },
+  };
+  if (ambientEnabledFromEnv() && stillAlive.length > 0) {
+    try {
+      ambient = await runAmbient(db, stillAlive);
+    } catch (err) {
+      console.error('[tick] ambient phase failed:', err);
+    }
+  }
+
+  return {
+    processed: aliveBefore.length,
+    deaths,
+    errors,
+    durationMs: Date.now() - startedAt,
+    ambient,
+  };
 }
 
 // Per-resident transaction. Guarded by a status=alive predicate on the UPDATE so a

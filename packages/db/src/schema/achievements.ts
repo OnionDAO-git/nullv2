@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
+import type { AchievementId, PrintJobStatus } from '@nullv2/types';
 import { humans } from './humans.ts';
 
 /** Earned achievements per human. */
@@ -9,7 +10,7 @@ export const humanAchievements = pgTable(
     humanId: uuid('human_id')
       .notNull()
       .references(() => humans.id, { onDelete: 'cascade' }),
-    achievementId: text('achievement_id').notNull(),
+    achievementId: text('achievement_id').$type<AchievementId>().notNull(),
     earnedAt: timestamp('earned_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
@@ -25,9 +26,9 @@ export const printJobs = pgTable(
     humanId: uuid('human_id')
       .notNull()
       .references(() => humans.id, { onDelete: 'cascade' }),
-    achievementId: text('achievement_id').notNull(),
-    /** queued | printing | ready | claimed | failed. */
-    status: text('status').notNull().default('queued'),
+    achievementId: text('achievement_id').$type<AchievementId>().notNull(),
+    /** See @nullv2/types PRINT_JOB_STATUS_IDS. */
+    status: text('status').$type<PrintJobStatus>().notNull().default('queued'),
     /** Short human-readable code for in-person claim at the print desk. */
     claimCode: text('claim_code').notNull().unique(),
     notes: text('notes'),

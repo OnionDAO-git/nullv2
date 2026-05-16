@@ -7,6 +7,10 @@ export const FACTION_IDS = [
 
 export type FactionId = (typeof FACTION_IDS)[number];
 
+export function isFactionId(value: string): value is FactionId {
+  return (FACTION_IDS as readonly string[]).includes(value);
+}
+
 export type Theme = 'hardware' | 'ai' | 'cybersecurity' | 'blockchain';
 
 export interface Faction {

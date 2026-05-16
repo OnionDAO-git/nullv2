@@ -1,4 +1,14 @@
 import { pgTable, uuid, text, integer, timestamp, index } from 'drizzle-orm/pg-core';
+import type {
+  DeathCause,
+  EmotionId,
+  FactionId,
+  MemoryKind,
+  MessageChannel,
+  ResidentStatus,
+  RoomId,
+  Speaker,
+} from '@nullv2/types';
 import { humans } from './humans.ts';
 
 export const residents = pgTable(
@@ -6,9 +16,19 @@ export const residents = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
-    faction: text('faction').notNull(),
+    faction: text('faction').$type<FactionId>().notNull(),
     /** System prompt + flavor handed to the LLM for this resident. */
     persona: text('persona').notNull(),
+    /** Emotion preset. See @nullv2/types EMOTION_IDS. Drives avatar tint + ambient tone. */
+    emotion: text('emotion').$type<EmotionId>().notNull().default('stillness'),
+    /** Static-catalog room slug. See @nullv2/types ROOM_IDS. */
+    roomId: text('room_id').$type<RoomId>().notNull().default('atrium'),
+    /** SPARK soul fields. All freeform, optional; default to '' so prompt logic
+     *  can detect "unset" without nulls. See packages/types/src/spark.ts. */
+    goals: text('goals').notNull().default(''),
+    alignment: text('alignment').notNull().default(''),
+    quirks: text('quirks').notNull().default(''),
+    aesthetic: text('aesthetic').notNull().default(''),
     /** Optional spawning human; null for team-seeded flagship residents. */
     ownerHumanId: uuid('owner_human_id').references(() => humans.id, { onDelete: 'set null' }),
     /** Attention balance — humans spend Shards on a resident; that flows here. Each tick deducts 1. */
@@ -16,8 +36,8 @@ export const residents = pgTable(
     /** Total ticks the resident may live, set at birth. */
     lifespanTicksTotal: integer('lifespan_ticks_total').notNull(),
     lifespanTicksRemaining: integer('lifespan_ticks_remaining').notNull(),
-    status: text('status').notNull().default('alive'),
-    deathCause: text('death_cause'),
+    status: text('status').$type<ResidentStatus>().notNull().default('alive'),
+    deathCause: text('death_cause').$type<DeathCause>(),
     bornAt: timestamp('born_at', { withTimezone: true }).notNull().defaultNow(),
     diedAt: timestamp('died_at', { withTimezone: true }),
   },
@@ -25,6 +45,7 @@ export const residents = pgTable(
     factionIdx: index('residents_faction_idx').on(t.faction),
     statusIdx: index('residents_status_idx').on(t.status),
     ownerIdx: index('residents_owner_idx').on(t.ownerHumanId),
+    roomIdx: index('residents_room_idx').on(t.roomId),
   }),
 );
 
@@ -36,8 +57,8 @@ export const residentMemories = pgTable(
     residentId: uuid('resident_id')
       .notNull()
       .references(() => residents.id, { onDelete: 'cascade' }),
-    /** birth | death | interaction | reflection | gift */
-    kind: text('kind').notNull(),
+    /** See @nullv2/types MEMORY_KIND_IDS. */
+    kind: text('kind').$type<MemoryKind>().notNull(),
     content: text('content').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -46,7 +67,7 @@ export const residentMemories = pgTable(
   }),
 );
 
-/** Chat + public utterances. Channel = chat | shout | last_words. */
+/** Chat + autonomous ambient utterances. See MESSAGE_CHANNEL_IDS / SPEAKER_IDS in @nullv2/types. */
 export const residentMessages = pgTable(
   'resident_messages',
   {
@@ -54,17 +75,19 @@ export const residentMessages = pgTable(
     residentId: uuid('resident_id')
       .notNull()
       .references(() => residents.id, { onDelete: 'cascade' }),
-    /** Null for public utterances (shouts, last words). */
+    /** Null for public utterances (shouts). */
     humanId: uuid('human_id').references(() => humans.id, { onDelete: 'set null' }),
-    /** Who said it: 'resident' | 'human'. */
-    speaker: text('speaker').notNull(),
-    channel: text('channel').notNull(),
+    speaker: text('speaker').$type<Speaker>().notNull(),
+    channel: text('channel').$type<MessageChannel>().notNull(),
     content: text('content').notNull(),
+    /** Room the line was uttered in. Required for shouts; copied from resident.roomId for chat. */
+    roomId: text('room_id').$type<RoomId>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     residentIdx: index('resident_messages_resident_idx').on(t.residentId),
     humanIdx: index('resident_messages_human_idx').on(t.humanId),
+    roomIdx: index('resident_messages_room_idx').on(t.roomId),
   }),
 );
 
@@ -75,12 +98,12 @@ export const libraryOfSouls = pgTable('library_of_souls', {
     .notNull()
     .references(() => residents.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  faction: text('faction').notNull(),
+  faction: text('faction').$type<FactionId>().notNull(),
   ownerHumanId: uuid('owner_human_id').references(() => humans.id, { onDelete: 'set null' }),
   /** Composed epitaph — drawn from memories + persona. */
   epitaph: text('epitaph').notNull(),
   livedTicks: integer('lived_ticks').notNull(),
-  deathCause: text('death_cause').notNull(),
+  deathCause: text('death_cause').$type<DeathCause>().notNull(),
   archivedAt: timestamp('archived_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

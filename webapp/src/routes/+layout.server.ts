@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { FACTION_IDS, standingFromPoints, type StandingTier } from '@nullv2/types';
 import { schema } from '@nullv2/db';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 
 export interface NavData {
@@ -22,10 +22,22 @@ export const load: LayoutServerLoad = async ({ locals }) => {
   const visitor = locals.visitor;
   if (!visitor) return { nav: EMPTY_NAV };
 
-  const standingRows = await db
-    .select()
-    .from(schema.factionStanding)
-    .where(eq(schema.factionStanding.humanId, visitor.human.id));
+  const [standingRows, unreadRows] = await Promise.all([
+    db
+      .select()
+      .from(schema.factionStanding)
+      .where(eq(schema.factionStanding.humanId, visitor.human.id)),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.letters)
+      .where(
+        and(
+          eq(schema.letters.humanId, visitor.human.id),
+          isNull(schema.letters.readAt),
+          isNull(schema.letters.archivedAt),
+        ),
+      ),
+  ]);
 
   const standings = FACTION_IDS.map((id) => {
     const row = standingRows.find((r) => r.faction === id);
@@ -40,7 +52,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
       shardBalance: visitor.human.shardBalance,
       visitorHandle:
         visitor.user.handle ?? visitor.user.name ?? visitor.user.email ?? 'visitor',
-      unreadCount: 0, // wired later when the letters table exists
+      unreadCount: unreadRows[0]?.count ?? 0,
       standings,
     } satisfies NavData,
   };

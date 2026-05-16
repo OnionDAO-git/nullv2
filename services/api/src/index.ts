@@ -8,6 +8,9 @@ import { residentsRoute } from './routes/residents.ts';
 import { achievementsRoute } from './routes/achievements.ts';
 import { wallRoute } from './routes/wall.ts';
 import { printJobsRoute } from './routes/print-jobs.ts';
+import { roomsRoute } from './routes/rooms.ts';
+import { lettersRoute } from './routes/letters.ts';
+import { libraryRoute } from './routes/library.ts';
 
 const app = new Hono();
 
@@ -23,6 +26,9 @@ app.route('/v1/residents', residentsRoute(db));
 app.route('/v1/achievements', achievementsRoute(db));
 app.route('/v1/wall', wallRoute(db));
 app.route('/v1/print-jobs', printJobsRoute(db));
+app.route('/v1/rooms', roomsRoute(db));
+app.route('/v1/letters', lettersRoute(db));
+app.route('/v1/library', libraryRoute(db));
 
 const port = Number(process.env.API_PORT ?? 3100);
 console.log(`[nullv2-api] listening on :${port}`);

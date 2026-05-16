@@ -65,6 +65,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@nullv2/db": "workspace:*",
+        "@nullv2/inference": "workspace:*",
         "@nullv2/types": "workspace:*",
         "drizzle-orm": "^0.38.0",
       },

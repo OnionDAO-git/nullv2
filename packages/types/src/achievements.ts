@@ -21,6 +21,10 @@ export const ACHIEVEMENT_IDS = [
 export type AchievementId = (typeof ACHIEVEMENT_IDS)[number];
 export type AchievementKind = 'single_faction' | 'cross_faction' | 'civic';
 
+export function isAchievementId(value: string): value is AchievementId {
+  return (ACHIEVEMENT_IDS as readonly string[]).includes(value);
+}
+
 export interface Achievement {
   id: AchievementId;
   kind: AchievementKind;

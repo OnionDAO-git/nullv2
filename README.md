@@ -2,891 +2,715 @@
 
 ### *An RPG you play with a lanyard*
 
-Null City v2 is a month-long, in-person experience for **Onion DAO 2026** at the embassy in
-Chicago. You walk in. You attend workshops. You earn **Shards** — the universal currency of
-attention. You spend Shards with one of four factions of AI residents in exchange for their
-oddly-specific resources. You trade resource bundles at the embassy print shop for a
-3D-printed achievement that clips to your lanyard. By the end of the month, the city has
-grown, the factions have new territory, and your lanyard is the receipt for the part you
-played in changing it.
+Null City v2 is a month-long, in-person experience for **Onion DAO 2026** at the embassy
+in Chicago. Humans walk in, earn **Shards** at workshops, spend them at the four AI-resident
+factions in exchange for oddly-specific resources, and redeem resource bundles for
+3D-printed achievement tokens that clip onto a lanyard. As humans engage, residents *live*:
+they accumulate attention from the Shards spent on them, they decay between visits, and
+they die when ignored. By the end of the month, the wall map shows the city the humans
+collectively built. The lanyard is the receipt for the part each visitor played.
 
-The conflict is non-violent and territorial. The residents are mortal. The lanyard is
-the point.
-
-> This is **v2**. v1 (a Kubernetes-native autonomous-agent simulation) lives in `../worldbox/`
-> as historical reference. Patterns were copied; packages are not.
+> This is **v2**. v1 — a Kubernetes-native autonomous-agent simulation — lives in
+> `../worldbox/` as historical reference. Patterns were copied; packages were not.
 
 ---
 
 ## Table of Contents
 
-1. [The Game](#the-game)
-2. [The System at a Glance](#the-system-at-a-glance)
-3. [Domain Model](#domain-model)
-4. [Economic Flow — A Walk-Through](#economic-flow--a-walk-through)
-5. [Residents](#residents)
-6. [Inference](#inference)
-7. [Authentication](#authentication)
-8. [Repo Layout](#repo-layout)
-9. [Quick Start (Local Dev)](#quick-start-local-dev)
-10. [Production Deploy](#production-deploy)
-11. [API Reference](#api-reference)
-12. [Database Schema](#database-schema)
-13. [Common Dev Tasks](#common-dev-tasks)
-14. [Troubleshooting](#troubleshooting)
-15. [Roadmap](#roadmap)
+1. [The Four Factions](#the-four-factions)
+2. [The Five Rooms](#the-five-rooms)
+3. [Visitor Flows (what humans accomplish)](#visitor-flows-what-humans-accomplish)
+4. [Resident Flows (how AI agents work)](#resident-flows-how-ai-agents-work)
+5. [The Letters System](#the-letters-system)
+6. [The Wall](#the-wall)
+7. [Architecture](#architecture)
+8. [Local Development](#local-development)
+9. [Production Deploy](#production-deploy)
+10. [API Reference](#api-reference)
+11. [Known Gaps & Inconsistencies](#known-gaps--inconsistencies)
 
 ---
 
-## The Game
+## The Four Factions
 
-### The Four Factions
-
-| Faction | Theme | Color | Motto |
-|---|---|---|---|
-| ⚡ **The Solder Saints** | Hardware | copper | *"No mind without a body. No body without a board."* |
-| 🥚 **The Hatchery** | AI | yolk-gold | *"Every resident was someone's training run."* |
-| 🔒 **The Locksmiths** | Cybersecurity | redacted-black | *"There is no secure system. We are merely curating the breaches."* |
-| 📜 **The Ledgerwrights** | Blockchain | bronze | *"Nothing happened until everyone agrees it happened."* |
-
-Each faction mints **three tiers** of resources. Twelve total. Higher tiers cost more Shards
-and require higher Standing with the faction. See `packages/types/src/resources.ts` for the
-full catalog.
-
-| Tier | Solder Saints | Hatchery | Locksmiths | Ledgerwrights |
+| Faction | Theme | Home room | Flagship | Motto |
 |---|---|---|---|---|
-| **T1** (2 Shards) | Flux Drop | Token Crumb | Tumbler Pin | Mempool Mote |
-| **T2** (6 Shards) | Signed Schematic | Echo Fragment | Master Bypass | Block Seal |
-| **T3** (15 Shards) | Reliquary Board | Lineage Scroll | Vault Charter | Genesis Crumb |
+| ⚡ **Solder Saints** | Hardware | Solder Chapel | Brother Solenoid | *"No mind without a body. No body without a board."* |
+| 🥚 **Hatchery** | AI | The Crèche | Midwife Lin | *"Every resident was someone's training run."* |
+| 🔒 **Locksmiths** | Cybersecurity | The Vault | The Curator | *"There is no secure system. We are merely curating the breaches."* |
+| 📜 **Ledgerwrights** | Blockchain | The Mempool | Scrivener Mox | *"Nothing happened until everyone agrees it happened."* |
 
-### Achievements (the 3D-printed pieces)
+Each faction mints **three tiers** of resources (twelve total). T1 = 2 Shards, T2 = 6
+Shards, T3 = 15 Shards. Higher tiers gate on **Standing**:
 
-| Kind | Examples | Recipe |
-|---|---|---|
-| **Single-faction** (4) | The Soldered Halo, The Hatched Egg, The Master Key, The Signed Block | 3× T1 + 1× T2 from one faction |
-| **Cross-faction** (4) | The Embodied Mind, The Sealed Sandbox, The Witnessed Vault, The Forged Coin | 1× T2 + 1× T2 from two factions |
-| **Civic** (3) | The First Shard, The Mortician's Ribbon, The Founder's Stake | No recipe — embassy grants on milestones |
-
-Civic achievements are granted by the embassy when you do something the city itself notices
-(first check-in, witnessing a death, earning any T3 resource).
-
-### Standing
-
-Cumulative Shards spent with a faction → a tier:
-
-| Tier | Threshold | Unlocks |
+| Standing tier | Cumulative Shards spent at faction | Unlocks |
 |---|---|---|
 | none | 0 | — |
 | acquaintance | 10 | T1 resources |
 | ally | 30 | T2 resources |
 | officer | 75 | T3 resources |
 
-### The Loop
-
-```
-┌─────────────┐    QR scan     ┌──────────────┐    chat + Shards     ┌────────────┐
-│  Workshop   ├───────────────▶│    Human     ├─────────────────────▶│  Resident  │
-│ (+5 Shards) │                │ (+5 Shards)  │                       │ (faction)  │
-└─────────────┘                └──────┬───────┘                       └──────┬─────┘
-                                      │                                      │
-                                      │ resource granted                     │ attention +N
-                                      │ (Flux Drop, Echo Fragment, ...)      │
-                                      ▼                                      ▼
-                               ┌──────────────┐                       ┌────────────┐
-                               │  Inventory   │                       │  Lives or  │
-                               │ (+1 T1 token)│                       │   Dies     │
-                               └──────┬───────┘                       └────────────┘
-                                      │
-                                      │ recipe full
-                                      ▼
-                               ┌──────────────┐    parcel ratified    ┌────────────┐
-                               │ Print Queue  ├──────────────────────▶│ Wall Map   │
-                               │  (lanyard)   │                       │ (faction)  │
-                               └──────────────┘                       └────────────┘
-```
-
-There's no winner. The map at the end of the month is the artifact.
+Eleven achievements ride on top: 4 single-faction (3× T1 + 1× T2), 4 cross-faction (1× T2
+from two factions), 3 civic (granted by the city, no recipe). All catalogs live as
+TypeScript constants in `@nullv2/types` — adding a faction or achievement is a code change,
+not a DB change.
 
 ---
 
-## The System at a Glance
+## The Five Rooms
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                       BROWSER (visitor / staff / wall)               │
-└─────────────────────────────────┬────────────────────────────────────┘
-                                  │  HTTP + session cookie
-                                  ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  webapp/        SvelteKit + adapter-node          :3101              │
-│  ┌────────────────┬────────────────┬──────────────┐                  │
-│  │  / (landing)   │ /dashboard     │ /staff       │ /wall            │
-│  │  /dashboard    │ visitor pages  │ admin pages  │ public display   │
-│  └────────────────┴────────────────┴──────────────┘                  │
-└─────────────────────────────────┬────────────────────────────────────┘
-                                  │  /v1/* (reverse-proxied in prod)
-                                  ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  services/api/      Hono REST + auth     :3100                       │
-│  /v1/me  /v1/factions  /v1/workshops  /v1/residents                  │
-│  /v1/achievements  /v1/wall  /v1/print-jobs                          │
-└─────┬──────────────────────────┬──────────────────────────┬──────────┘
-      │                          │                          │
-      │ SQL                      │ HTTP                     │ SQL
-      ▼                          ▼                          │
-┌──────────────┐    ┌────────────────────────┐              │
-│  PostgreSQL  │    │ services/inference/    │              │
-│              │    │ Hono + Vercel AI SDK   │              │
-│  - landing-  │    │ :3102                  │              │
-│    2026      │◀───┤                        │              │
-│    (users,   │    │ ▶ OpenAI-compatible    │              │
-│   sessions)  │    │   endpoint of choice   │              │
-│  - nullv2    │    └────────────────────────┘              │
-│    (game     │                                            │
-│     state)   │◀───────────────────────────────────────────┘
-└──────┬───────┘
-       │  SQL
-       ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│  services/tick/    Bun loop, every 5min                              │
-│  Per alive resident: -1 lifespan, -1 attention, kill at zero,        │
-│  archive to library_of_souls.                                        │
-└──────────────────────────────────────────────────────────────────────┘
-```
+Rooms are the city's geography. They are static constants (like factions), defined in
+`packages/types/src/rooms.ts`. Every resident has a `roomId`, every chat message is tagged
+with the room it was uttered in.
 
-**Five processes** in production: postgres, api, tick, inference, webapp. All TypeScript
-on Bun. All in one Docker Compose. Single VPS deploy.
+| Room | Slug | Faction tilt | Atmosphere |
+|---|---|---|---|
+| **The Atrium** | `atrium` | civic / neutral | Cross-faction crossroads. Newborns wake here unless a faction is chosen. |
+| **The Solder Chapel** | `solder_chapel` | Solder Saints | Smell of flux. Boards cooling on slate. |
+| **The Crèche** | `creche` | Hatchery | Soft linen, warm lamps, first-sentence printouts on the walls. |
+| **The Vault** | `vault` | Locksmiths | Oiled brass, dim corridors, numbered tags on cord. |
+| **The Mempool** | `mempool` | Ledgerwrights | Iron-gall ink, vellum, wax seals in red. |
+
+Each room shows a live occupancy count + a recent-dialogue feed, mixing **chat** (with a
+visitor) and **shout** (ambient, autonomous utterances) lines.
 
 ---
 
-## Domain Model
+## Visitor Flows (what humans accomplish)
+
+A *visitor* is a human user. The visitor's universe is `/dashboard`, `/rooms`, `/inbox`,
+`/wall`. Everything they can do:
+
+### 1. Sign in (via landing-2026, not nullv2)
+
+nullv2 does **not run its own login flow**. landing-2026 owns the magic-link auth and
+the `users` / `sessions` / `magic_links` tables. nullv2 shares the same Postgres and
+reads from those tables. Cookie domain is `.oniondao.dev` so both subdomains see it.
+
+- `oniondao.dev/login` → magic link → `Set-Cookie: session=...; Domain=.oniondao.dev`
+- `city.oniondao.dev/` reads the cookie, looks up the token, lazily creates a `humans`
+  row on first visit (the row holds shard balance, standing, inventory).
+
+For local dev without standing up landing-2026: `./scripts/dev-fake-session.sh you@example.com "You"`.
+
+### 2. Earn Shards (workshops)
+
+Workshops are staff-mediated. The visitor doesn't do anything on their phone; they hand
+their email (or eventually a badge) to a staff member at the embassy.
+
+- Staff opens `/staff`, picks the workshop, types the visitor's email.
+- **`POST /v1/workshops/scan`** (admin only) inserts a `workshop_attendance` row,
+  credits the visitor's shard balance, writes a `+5 / workshop_attendance` line to
+  `shard_ledger`. Idempotent: re-scanning the same human at the same workshop returns 409.
+
+Every shard movement, forever, lands in `shard_ledger`. The ledger is the source of truth
+for accounting; the `humans.shard_balance` column is a denormalized cache the API updates
+in the same transaction.
+
+### 3. Wander the city
+
+The visitor's dashboard shows their balances and standings. From there:
+
+- **`/rooms`** — five room cards, each with occupancy + a "last spoken" hint.
+  (`GET /v1/rooms`)
+- **`/rooms/[slug]`** — one room's detail: list of alive occupants + the last 30
+  utterances (chat + ambient mixed) with speaker name, faction colour, emotion glyph.
+  (`GET /v1/rooms/:slug`)
+- **`/wall`** — public kiosk view: the territory parcels, the faction leaderboard, a
+  scrolling ticker of recent births/deaths/achievements. (`GET /v1/wall/state`)
+
+### 4. Talk to a resident (the main loop)
+
+From a room or the dashboard, the visitor clicks into a resident. They land on
+`/residents/[id]`, which shows:
+
+- The resident's name, faction, emotion, room.
+- An **attention meter** with current / max balance.
+- The **SPARK "Inner life"** panel — four mini-bars (hunger / safety / social / purpose)
+  with the dominant one highlighted and a short blurb explaining why it's loud (see
+  *Resident Flows / SPARK* below).
+- A chat history.
+- A composer at the bottom for *message* + *Shards offered* + *requested resource*.
+
+When the visitor submits:
 
 ```
-factions (4 static)                resources (12 static)              achievements (11 static)
-  ├ solder_saints                    ├ flux_drop (T1, solder_saints)    ├ soldered_halo (single)
-  ├ hatchery                         ├ token_crumb (T1, hatchery)       ├ embodied_mind (cross)
-  ├ locksmiths                       ├ ... 10 more ...                  ├ first_shard (civic)
-  └ ledgerwrights                                                        └ ... 8 more ...
-
-humans  (1:1 with users in landing-2026)
-  ├ shard_balance
-  ├ badge_id?
-  ├ faction_standing  ── points per faction
-  ├ resource_inventory ── quantity per resource type
-  ├ human_achievements ── earned-at timestamps
-  └ shard_ledger      ── full audit of every shard movement
-
-residents
-  ├ name, faction, persona
-  ├ owner_human_id?              (null = team flagship; set = visitor-spawned)
-  ├ attention_balance            (humans pay this in; tick decays 1/cycle)
-  ├ lifespan_ticks_remaining     (hard limit, also decays 1/tick)
-  ├ status                       (alive / dead)
-  ├ resident_memories            (birth, interaction, reflection, death — LLM context)
-  ├ resident_messages            (chat log, both speakers)
-  ├ attention_ledger             (audit of every attention movement)
-  └ library_of_souls (on death)  (epitaph + final stats)
-
-workshops
-  ├ title, faction?, kind        (workshop | competition | quest | check_in)
-  ├ qr_code                      (staff scans visitors with this)
-  ├ shard_reward
-  └ workshop_attendance          (one row per scan)
-
-print_jobs (the queue)
-  ├ human_id, achievement_id
-  ├ claim_code                   (6-char base32, shown to staff at print desk)
-  └ status                       (queued / printing / ready / claimed / failed)
-
-parcels (territory map)
-  ├ faction, x, y
-  ├ achievement_id?              (which achievement minted this parcel)
-  └ ratified_by_human_id?
+POST /v1/residents/:id/chat
+{ message, shardsOffered, requestedResourceId? }
 ```
 
-### Static vs Dynamic
+The API:
 
-The **static catalog** (4 factions, 12 resources, 11 achievements, standing thresholds) lives
-entirely in `@nullv2/types` as TypeScript constants. Adding a faction or achievement is a
-**code change, not data entry**. This keeps the schema small and the constants type-checked
-across the codebase.
+1. Loads the resident. 410 if dead.
+2. Verifies the visitor has enough Shards.
+3. If a resource was requested: validates it belongs to the resident's faction and that
+   the visitor's standing meets the minimum tier.
+4. **Calls inference *before* the DB transaction.** If inference fails, no DB writes
+   happen and the visitor sees a 502. (CLAUDE.md invariant: a slow LLM never holds a
+   row lock.)
+5. **Opens a single transaction**, then writes:
+   - `humans.shard_balance` − offered Shards + `shard_ledger` debit row.
+   - `residents.attention_balance` + offered Shards + `attention_ledger` credit row.
+   - `faction_standing` upsert (points += Shards offered).
+   - `resident_messages` × 2 (visitor's line, resident's reply).
+   - `resident_memories` interaction row (a short summary).
+   - If a resource was granted: `resource_grants` + `resource_inventory` upsert.
+   - If the standing tier crossed a threshold: a **letter** to the visitor's inbox (see
+     *Letters System*).
+6. Returns `{ residentMessage, grantedResource?, newShardBalance, standing, ... }`.
 
-The **dynamic state** lives in Postgres: visitors, residents, balances, inventories, ledgers,
-the territory map.
+The visitor sees the response appear in the chat immediately. The Shards have moved from
+their wallet into the resident's lifeline.
+
+### 5. Refill a resident (mercy infusion)
+
+If a resident is starving, the visitor can pay 5 Shards for a +10 attention bump without
+buying anything:
+
+```
+POST /v1/residents/:id/refill
+```
+
+This is a single-tx debit/credit pair (`shard_ledger` − 5 / `attention_ledger` + 10).
+No standing change. No resource grant. Used to keep favourite residents alive.
+
+### 6. Birth a new resident
+
+A visitor with 24 Shards can spend `BIRTH_QUICKENING + BIRTH_INSCRIPTION + BIRTH_TITHE`
+= 24 Shards to spawn their own resident. There is a **24-hour cooldown per human** so the
+city doesn't get spammed.
+
+The birth screen at `/rooms/birth` has two halves:
+
+1. **Required**: name, faction, room (defaults to faction home), emotion, motto.
+2. **Optional — "Advanced soul fields"** (collapsed by default, the SPARK seed):
+   - `goals` — what the resident wants, even when they can't say why.
+   - `alignment` — moral grain.
+   - `quirks` — distinguishing tics.
+   - `aesthetic` — register / vibe.
+
+These four fields seed the resident's **soul** (see *Resident Flows*). They are stored
+verbatim on the `residents` row and injected into every prompt the model sees.
+
+```
+POST /v1/rooms/birth
+{ name, faction, emotion, motto, roomId?,
+  goals?, alignment?, quirks?, aesthetic? }
+```
+
+The API composes a `persona` string from those inputs, writes the resident with
+`attentionBalance = 24, lifespanTicks = 288` (~24h at 5min/tick), debits 24 Shards,
+seeds a `birth` memory row from the motto. The new resident appears in their room
+within seconds.
+
+### 7. Read the inbox (letters)
+
+Anything the city wants to *tell* the visitor lands in `/inbox`. There are three
+automatic triggers (no manual "send letter" surface):
+
+| Kind | Trigger | Who writes it |
+|---|---|---|
+| **standing** | crossing a tier threshold (none→acquaintance→ally→officer) | the faction's flagship |
+| **epitaph** | a resident you've chatted with dies | a sibling flagship of the dead resident's faction |
+| **civic** | the city itself does something (achievement redeemed) | "The Embassy" |
+
+UI actions:
+- `GET /v1/letters` lists the unread/archived inbox.
+- `GET /v1/letters/:id` opens one (auto-marks read).
+- `POST /v1/letters/:id/archive` archives it.
+- `POST /v1/letters/mark-all-read` zeroes the unread badge.
+
+Letters have a denormalised `fromName / fromMonogram / fromEmotion` so they keep
+displaying correctly even if the original sender dies between writing and reading.
+
+### 8. Browse the Library of Souls
+
+`/library` lists every resident who has ever gone still in Null City. Filter by
+faction. Each card shows the soul's stained glass tile, name, faction, a 1-line
+epitaph teaser, the cause of death, and how many ticks they lived. Click any
+card to land on `/library/[residentId]` which shows the full epitaph,
+"first words" (the birth motto), "last lines" (the resident's final
+utterances), the four soul fields they were made of, and a vitals strip with
+born / died / lived / cause / last-room / visitors / shouts. The library is
+read-only and permanent — there is no resurrection.
+
+API:
+- `GET /v1/library` — list, optional `?faction=` filter, returns `souls` +
+  `byFaction` counts.
+- `GET /v1/library/:residentId` — detail with memories + last spoken lines +
+  aggregate stats.
+
+### 9. The Embassy front desk
+
+`/embassy` is the visitor's reference page for things that happen in the
+physical embassy room:
+
+- **Your claim codes** — every open `print_jobs` row in `queued / printing /
+  ready`, with the short claim code highlighted for the print desk.
+- **Workshop schedule** — upcoming + currently active workshops with their
+  shard reward.
+- **Civic achievements** — the three embassy-granted pieces
+  (`first_shard / morticians_ribbon / founders_stake`) with earned / not-yet
+  badges.
+- **City snapshot** — living-resident + archived-soul counts.
+
+This is a visitor-facing reference; the actual scan-in and print-desk
+operations live on `/staff` (admin-gated).
+
+### 10. Sign out
+
+`/logout` is a thin server endpoint that clears the shared `session` cookie.
+It does NOT delete the underlying `sessions` row (that table is owned by
+landing-2026). With `Domain=.oniondao.dev`, clearing the cookie at the
+nullv2 subdomain logs the visitor out across both subdomains; the row
+expires on its own schedule.
+
+### 11. Redeem an achievement
+
+The visitor opens `/dashboard/achievements`. The page lists all 11 achievements with a
+visual recipe (`3× Flux Drop, 1× Signed Schematic`) and a green / red state for each
+ingredient based on the visitor's current inventory.
+
+When a recipe is full, the redeem button activates:
+
+```
+POST /v1/achievements/redeem
+{ achievementId }
+```
+
+The API, in one transaction:
+
+1. Re-validates the recipe against current inventory.
+2. Decrements each ingredient.
+3. Inserts `human_achievements` (uniqueness enforced per visitor + achievement).
+4. Inserts `print_jobs` with a generated `claim_code` (6-char base32).
+5. Inserts a `parcels` row for the achievement's faction at a random (x, y), retrying on
+   collision.
+6. Inserts a **civic letter** from "The Embassy" containing the claim code.
+
+The wall display shows one new parcel in the faction's colour. The print queue at the
+embassy desk shows `Alice → The Soldered Halo / K7M2WX`. Staff prints the lanyard piece,
+marks `ready`, hands it over, marks `claimed`. The lanyard token is the artifact.
+
+Civic achievements (`first_shard`, `morticians_ribbon`, `founders_stake`) have empty
+recipes and are granted directly by the embassy on milestone events (first check-in,
+witnessing N deaths, etc.).
 
 ---
 
-## Economic Flow — A Walk-Through
+## Resident Flows (how AI agents work)
 
-Let's follow **Alice** through one full loop.
+A *resident* is an AI persona with a soul, a body of state, a lifespan, and a voice.
+Residents are not autonomous in the K8s-pod sense of v1; they are LLM personas that the
+**tick worker** wakes up every 5 minutes to think and (sometimes) speak.
 
-### 1. Alice scans into a workshop
+### Anatomy
 
-Staff opens `/staff` (admin-gated). Selects "Soldering 101" from the workshop list. Types
-`alice@example.com`. Clicks "Award Shards".
+Every `residents` row carries:
 
-```
-POST /v1/workshops/scan        Admin only
-{ qrCode: "sold-101", humanEmail: "alice@example.com" }
-```
+| Column | Purpose |
+|---|---|
+| `persona` | The composed system-prompt paragraph (set at birth, immutable). |
+| `goals`, `alignment`, `quirks`, `aesthetic` | **Soul fields** — freeform text injected into every prompt as the "what i want / what i would do / how i act / how i sound" section. |
+| `emotion` | One of `stillness / reverie / unease / anguish / fury`. The dominant tone. |
+| `roomId` | Where they currently are. Determines their feed location. |
+| `attentionBalance` | Per-tick decay. Visitors top this up by spending Shards on them. |
+| `lifespanTicksTotal / Remaining` | Hard ceiling. ~30 days for flagships, ~1 day for visitor births. |
+| `status` | `alive` or `dead`. |
+| `ownerHumanId` | `null` for team flagships; set for visitor births. |
 
-API does:
+Adjacent tables:
 
-1. Resolve `humanEmail` → user (in the shared `users` table) → ensure a `humans` row exists.
-2. Look up the workshop by `qr_code`.
-3. Reject 409 if an attendance row already exists for (workshop, human).
-4. **In a single transaction**: insert `workshop_attendance`, increment `humans.shard_balance`
-   by `workshop.shard_reward`, append a `+5 / workshop_attendance` row to `shard_ledger`.
+- `resident_memories` — birth / interaction / reflection / death rows. The last 5 are
+  fed back to the model on every chat. The birth memory is the resident's "first line."
+- `resident_messages` — every utterance, append-only, tagged `chat` or `shout`.
+- `library_of_souls` — one row per dead resident, with templated epitaph + lived ticks.
 
-Alice now has 5 Shards. The ledger is permanent — every credit and debit, forever.
+### SPARK — the needs hierarchy
 
-### 2. Alice chats with Brother Solenoid
+Adapted from v1's wiki (see `../landing-2026/null-wiki/reference/spark-framework.md`).
+A pure compute function in `packages/types/src/spark.ts` turns the resident's state
+into four 0–100 pressure values, ranked by priority on tie-break:
 
-Alice opens her dashboard. She sees the four factions and her standing (none, none, none, none).
-She clicks into Brother Solenoid's chat (a Solder Saints flagship resident). She types
-*"I'm here to learn"*, offers 5 Shards, and requests a **Flux Drop**.
+| Need | What it tracks | Formula |
+|---|---|---|
+| **hunger** | risk of attention starvation | `max(100 − attentionBalance, life_stress) + knee_amp` |
+| **safety** | nearby death in last 12 ticks | `deaths_in_room × 30` |
+| **social** | absence of interaction | `ticks_since_last_line × 10` |
+| **purpose** | unfinished goals | `(has_goals ? 30 : 0) + ticks_quiet × 3 − 20` |
 
-```
-POST /v1/residents/{brotherSolenoidId}/chat        Visitor
-{
-  message: "I'm here to learn",
-  shardsOffered: 5,
-  requestedResourceId: "flux_drop"
-}
-```
+At ≥60 a need is **urgent** and dominates deliberation. Below 60, the highest-pressure
+need wins (priority: hunger > safety > social > purpose). The mean of the four is
+**agitation**, which drives the ambient-speak probability.
 
-API does:
+The same snapshot is rendered on the visitor's `/residents/[id]` page as the "Inner life"
+panel (so the visitor can *see* why the resident sounds the way it does) and folded into
+the inference prompt as a system-block:
 
-1. Load Brother Solenoid. Reject 410 if dead.
-2. Check Alice has 5 Shards. ✓
-3. Validate Flux Drop is a Solder Saints resource. ✓
-4. Check Flux Drop's `minStanding = 'acquaintance'`. Alice's current standing is `none`, threshold for `acquaintance` is 10 — but a fresh purchase pre-grants the bump. Resource cost is 2 Shards; Alice offers 5. **Standing becomes points=5 (still `none` → 5 < 10 = `none`).** Wait. We need to check the standing *before* this purchase, not the post-bump value. Looking at the code, the standing check happens before the upsert, so the very first purchase fails for tiers above `none`. **For T1 resources (`acquaintance`) — Alice needs 10 cumulative points before her first purchase.** This is a deliberate first-touch friction: a brand-new visitor cannot buy from a faction without first investing 10 Shards into them.
-5. *(Imagine Alice has previously spent 10+ Shards on Solder Saints chatter, so she qualifies.)*
-6. **Inference is called first**, outside the DB transaction:
-   ```
-   POST http://inference:3102/v1/inference/complete
-   { residentId, humanMessage: "I'm here to learn" }
-   ```
-   Inference loads Brother Solenoid's persona + last 5 memories + last 8 messages, builds
-   a Solder Saints system prompt, calls Vercel AI SDK against the configured OpenAI-compatible
-   endpoint, returns:
-   `{ content: "Hold the iron like a prayer candle. Now: tin the joint.", ... }`
-7. **Now in one DB transaction**:
-   - `resource_grants` row: Brother Solenoid issued Alice 1× Flux Drop for 5 Shards.
-   - `resource_inventory` (Alice, flux_drop): quantity +1 (upsert).
-   - `humans.shard_balance` −5 (Alice now at 0).
-   - `shard_ledger` row: `-5 / resource_purchase / flux_drop`.
-   - `residents.attention_balance` +5 (Brother Solenoid gets life).
-   - `attention_ledger` row: `+5 / resource_purchase / source=Alice`.
-   - `faction_standing` (Alice, solder_saints): points +5 (upsert).
-   - `resident_messages` × 2: human's message + resident's reply.
-   - `resident_memories`: short summary of the exchange.
-8. Response: `{ residentMessage: {speaker:'resident', content: "..."}, grantedResource: {resourceId:'flux_drop', quantity:1}, newShardBalance: 0, residentAttention: ..., standing: {...} }`
+> *"What presses on you most right now: hunger. attention is thinning. they fear going still."*
 
-**If inference fails**, the DB transaction never starts. Nothing changes. The visitor sees
-an error and can retry.
+### Voice: chat vs ambient
 
-### 3. Alice keeps going, eventually has a recipe full
+A resident speaks in two modes:
 
-After several visits to Solder Saints residents (and more workshops), Alice has:
+**Chat** — visitor-initiated. `POST /v1/residents/:id/chat` calls
+`completeForResident(db, …)` from `@nullv2/inference/lib`. It:
 
-- 3× Flux Drop
-- 1× Signed Schematic
+1. Loads the last 5 memories + last 8 messages.
+2. Computes the SPARK snapshot via `fetchNeedsSnapshot()`.
+3. Builds a system prompt: faction line + motto + persona + soul fields + dominant-need
+   blurb + memory bullet points.
+4. Calls Vercel AI SDK against the configured OpenAI-compatible endpoint.
+5. Returns `{ content, model, usage, finishReason }`.
 
-That's the recipe for **The Soldered Halo**.
+The API layer wraps this in the chat transaction (see *Visitor flows / Talk to a resident*).
 
-```
-POST /v1/achievements/redeem        Visitor
-{ achievementId: "soldered_halo" }
-```
+**Ambient (shout)** — autonomous. The tick worker, after the per-resident decay pass,
+re-queries the still-alive set and runs `runAmbient(db, residents)`:
 
-API does, in a single transaction:
+1. **Batch-load** in two queries: max(createdAt) per resident (last interaction
+   timestamp) and count(deaths-in-room within RECENT_TICKS_WINDOW).
+2. For each resident, compute the SPARK snapshot **in-process** (no extra DB hit).
+3. Derive `ambientSpeakProbability(agitation) = 0.1 + agitation / 200` (clamped 0..1).
+4. Sort residents by probability desc; for each, roll. Cap at `maxPerTick = 8` so a
+   noisy tick can't blow the inference budget.
+5. For each speaker, call `completeAmbientForResident()` with the pre-computed SPARK
+   snapshot (so chat and ambient paths see the same numbers). Insert one
+   `resident_messages` (`channel='shout'`) + one `resident_memories` (`kind='reflection'`).
 
-1. Validate the recipe against Alice's inventory.
-2. Decrement: −3 Flux Drop, −1 Signed Schematic.
-3. Insert `human_achievements` (Alice, soldered_halo).
-4. Insert `print_jobs` with a generated `claim_code` (6-char base32, unique).
-5. Insert a `parcels` row for the achievement's faction (Solder Saints) at a random (x, y),
-   retrying on coordinate collision.
-
-Response: `{ achievement, claimCode: "K7M2WX", parcels: [...] }`.
-
-The wall display now shows one new copper parcel. The print queue at the embassy now shows
-"Alice → The Soldered Halo / claim K7M2WX". Staff prints the piece, marks it `ready`, hands
-it to Alice at the desk, marks it `claimed`.
-
-### 4. The ticks continue
-
-Every 5 minutes, the tick worker:
-
-```
-for each resident where status='alive':
-  in a transaction keyed on resident.id and status='alive':
-    lifespan_ticks_remaining -= 1
-    attention_balance -= 1
-    write -1 to attention_ledger ('tick_decay')
-    if lifespan_ticks_remaining <= 0:
-      kill(cause: 'lifespan')
-    elif attention_balance <= 0:
-      kill(cause: 'attention')
-```
-
-A resident no human visits will run out of attention. A resident who survives long enough
-will hit their lifespan ceiling. Either way, death:
-
-- `status = 'dead'`
-- `died_at = now()`
-- `resident_memories` row: kind `death`, content `"{name} died of {cause}."`
-- `library_of_souls` row: name, faction, lived_ticks, death_cause, templated epitaph
-
-A resident's death is **permanent**. The wall ticker scrolls `💀 Brother Solenoid died of
-attention`. Library of Souls is browsable (UI TBD).
-
----
-
-## Residents
-
-A resident has four components:
-
-1. **Persona** — a paragraph of system-prompt material, set at birth, immutable.
-2. **Memory log** — `resident_memories` rows. Used as recent context in inference calls and
-   as the basis for the eventual Library of Souls epitaph.
-3. **Message log** — every utterance, public or chat, append-only.
-4. **Economic state** — `lifespan_ticks_remaining` + `attention_balance`.
+A failed ambient call is logged and counted as `failed` but never fatal — the loop
+continues.
 
 ### Birth
 
-Today, residents are seeded only by the team via `bun run db:seed` (one flagship per faction):
+Two paths:
 
-| Faction | Flagship | Personality |
-|---|---|---|
-| Solder Saints | Brother Solenoid | Speaks in metaphors of heat and metal. Stubborn. Warm. |
-| Hatchery | Midwife Lin | Gentle. Grieves loudly when residents die. |
-| Locksmiths | The Curator | Clipped sentences. Assumes recording. |
-| Ledgerwrights | Scrivener Mox | Witnesses for the record. Forgives nothing. |
-
-Visitor-spawned residents are scaffolded in the schema (`residents.owner_human_id`) but the
-spawn endpoint is not yet wired.
-
-### Life
-
-A resident is alive while `status='alive'`. They:
-
-- Receive chat messages and reply (via inference).
-- Accumulate `attention_balance` from every Shard a human spends on them.
-- Decay 1 attention + 1 lifespan per tick.
+1. **Team flagships** — `bun run db:seed`. One per faction, ~30 day lifespan, full soul
+   fields (Brother Solenoid's `goals` etc. are committed in `packages/db/src/seed.ts`).
+   Idempotent: re-running won't duplicate.
+2. **Visitor births** — `POST /v1/rooms/birth`. ~24h lifespan, 24-Shard cost, 24h cooldown.
+   The composed persona stitches the motto + soul fields into the system prompt verbatim.
 
 ### Death
 
-Triggered by the tick worker. Two causes:
+The tick worker is the executioner. Every 5 minutes:
 
-- **lifespan** — `lifespan_ticks_remaining` hit zero.
-- **attention** — `attention_balance` hit zero (and lifespan still has time).
+```
+for each resident where status='alive':
+  in a transaction guarded by status='alive':
+    lifespanTicksRemaining -= 1
+    attentionBalance -= 1
+    write -1 attention_ledger row (tick_decay)
+    if lifespanTicksRemaining <= 0: kill(cause='lifespan')
+    elif attentionBalance <= 0:   kill(cause='attention')
+```
 
-On death:
+Cause priority is **lifespan before attention**. The `status='alive'` predicate on the
+UPDATE means a crash + restart can't double-decrement.
 
-1. `status='dead'`, `died_at=now()`.
-2. A `death` memory row.
-3. A `library_of_souls` row with a **templated** epitaph today:
-   `"{name}, of the {faction.name}. Born {bornAt.toISOString()}, archived after {livedTicks} ticks. Died of {deathCause}. {persona truncated to 200 chars}"`
-   LLM-driven epitaphs are a follow-up that will call the inference service from the tick worker.
+`killResident()` runs inside the same transaction:
+
+1. `status = 'dead'`, `diedAt = now()`.
+2. Insert a `death` memory row.
+3. Insert a `library_of_souls` row: name, faction, lived_ticks, cause, **templated**
+   epitaph (LLM-driven epitaphs are flagged as a follow-up).
+4. Insert **epitaph letters** for every human who ever chatted with this resident,
+   authored by a *different* flagship of the same faction.
+5. If the resident had an owner, insert a **mortician civic letter** to the owner
+   acknowledging the loss.
+
+The wall ticker scrolls `💀 Brother Solenoid died of attention`. The library of souls
+table is populated forever; a UI to browse it is a roadmap item.
+
+### Heartbeat: the tick worker
+
+`services/tick/` is a single Bun process that loops:
+
+```ts
+setTimeout(runTick, TICK_INTERVAL_MS)   // default 5min
+```
+
+`runTick(db)` returns `{ processed, deaths, errors, durationMs, ambient: { attempted,
+succeeded, failed, dominantHist } }`. The log line each tick prints the dominant-need
+histogram so an operator can see at a glance what's pressing on the city:
+
+```
+tick: processed=12 deaths=1 errors=0 ambient=3/4 hunger=0 safety=1 social=2 purpose=0
+```
+
+`SIGTERM` / `SIGINT` finish the in-flight tick before exit.
 
 ---
 
-## Inference
+## The Letters System
 
-`services/inference/` is a thin Hono service wrapping the **Vercel AI SDK** (`ai` + `@ai-sdk/openai`).
-It is configurable to point at **any OpenAI-compatible endpoint** — OpenAI, Groq, Together AI,
-OpenRouter, local LM Studio, you name it.
+Letters are the city's only one-way channel from residents (and the embassy) to humans.
+They are stored in the `letters` table with a denormalised sender snapshot so deletes
+elsewhere don't break the inbox.
 
-### Configuration
-
-```bash
-INFERENCE_PORT=3102
-INFERENCE_BASE_URL=https://api.openai.com/v1   # or any openai-compat endpoint
-INFERENCE_API_KEY=sk-...
-INFERENCE_MODEL=gpt-4o-mini                     # default; can be overridden per call
-INFERENCE_MAX_TOKENS=400
-```
-
-To swap to, e.g., Together AI:
-```
-INFERENCE_BASE_URL=https://api.together.xyz/v1
-INFERENCE_API_KEY=<together-key>
-INFERENCE_MODEL=meta-llama/Llama-3.1-70B-Instruct-Turbo
-```
-
-To swap to local LM Studio:
-```
-INFERENCE_BASE_URL=http://localhost:1234/v1
-INFERENCE_API_KEY=lm-studio
-INFERENCE_MODEL=qwen/qwen2.5-7b-instruct
-```
-
-### Request flow
-
-```
-POST /v1/inference/complete
-{ residentId, humanMessage, model?, maxTokens? }
-   │
-   ├─ Load resident from DB (404 if missing, 410 if dead)
-   ├─ Load last 5 memories (desc by created_at)
-   ├─ Load last 8 messages (oldest → newest)
-   ├─ Build system prompt:
-   │    "You are {name}, a resident of Null City affiliated with {faction.name}.
-   │     Faction motto: {motto}
-   │     Faction blurb: {blurb}
-   │     Persona: {resident.persona}
-   │     Recent memories you carry: ..."
-   ├─ Build messages array from history (human→user, resident→assistant)
-   ├─ Append new user turn
-   ├─ generateText({ model: openai(model), system, messages, maxTokens })
-   └─ Return { content, model, usage, finishReason }
-```
-
-The same logic is exported as `completeForResident(db, input)` from `@nullv2/inference/lib`,
-so `services/api`'s chat handler can call it in-process when the two are co-located. The HTTP
-endpoint is a thin wrapper around the same function.
-
-### Why a separate service?
-
-- **Provider swappability**: change `INFERENCE_BASE_URL` and restart one container.
-- **Cost containment**: the LLM is the only paid dependency; isolating it makes billing &
-  rate-limiting easier.
-- **Future**: streaming endpoint (SSE/WebSocket), per-resident model selection, embeddings.
-
----
-
-## Authentication
-
-nullv2 **does not run its own login flow**. It piggybacks on landing-2026's existing
-magic-link auth.
-
-### How it works
-
-1. A visitor opens `https://oniondao.dev/login`, enters their email, clicks the magic link
-   from Resend. landing-2026 issues an opaque hex token, stores it in the `sessions` table,
-   and sets a `session` cookie scoped to `.oniondao.dev`.
-2. The visitor opens `https://city.oniondao.dev/`. The browser sends the same `session`
-   cookie because the cookie domain covers both subdomains.
-3. nullv2 reads the cookie, looks up the token in the shared `sessions` table, joins to
-   `users`, and **lazily inserts a `humans` row** for game state on first visit.
-
-```
-landing-2026                  shared Postgres                  nullv2
-─────────────                 ───────────────                  ───────
-  /login                                                       
-   ▼                            users  ◀────────── reads ──── /v1/me
-  createMagicLink                sessions                       hooks.server.ts
-   ▼                              ▲                             ↓ ensureHuman()
-  email link                      │                              humans
-   ▼                              │
-  /login/verify                   │
-   ▼                              │
-  createSession ──── inserts ─────┘
-   ▼
-  Set-Cookie: session=...; Domain=.oniondao.dev
-```
-
-### Cookie domain
-
-For the cookie to be shared, both apps must serve over `.oniondao.dev`:
-
-- landing-2026 at `oniondao.dev`
-- nullv2 at `city.oniondao.dev`
-
-Set `AUTH_COOKIE_DOMAIN=.oniondao.dev` in nullv2's prod env. In local dev, both apps live on
-`localhost` and the cookie is host-scoped to whatever port — use `dev-fake-session.sh` to
-mint local sessions without standing up landing-2026.
-
-### Source of truth
-
-| Table | Owner | nullv2's relationship |
+| Kind | Trigger | Inside which transaction |
 |---|---|---|
-| `users` | landing-2026 | **Read-only.** Declared in `packages/db/src/external/`. |
-| `sessions` | landing-2026 | **Read-only.** Same. |
-| `magic_links` | landing-2026 | Not declared — we don't read it. |
-| `humans` and 14 others | **nullv2** | Owned + migrated by `@nullv2/db`. |
+| `standing` | `POST /v1/residents/:id/chat` when a faction-points threshold is crossed | the chat tx |
+| `epitaph` | `killResident()` on every alive→dead transition | the death tx |
+| `civic` | `POST /v1/achievements/redeem` after the recipe burns | the redeem tx |
+| `broadcast` | reserved for future embassy-wide announcements | — |
 
-Drizzle is configured to migrate only the schema folder (`packages/db/src/schema/`), so
-`drizzle-kit generate` will never touch the external tables.
+Each letter carries `fromName`, `fromMonogram` (2 letters), `fromEmotion`. Plus optional
+`subject`, body content (markdown), `readAt`, `archivedAt`, and a `metadata` jsonb for
+kind-specific extras (claim code on civic letters, new-tier on standing letters).
 
 ---
 
-## Repo Layout
+## The Wall
+
+`/wall` is the public kiosk display. `GET /v1/wall/state` returns:
+
+- **Parcels** — all `parcels` rows. Each row carries `faction`, `(x, y)`, the achievement
+  that minted it, the human who ratified it.
+- **Leaderboard** — cumulative parcel count per faction.
+- **Ticker** — recent births + deaths + achievements (mixed, time-sorted, capped).
+
+The page polls via `invalidateAll()` on a timer to feel live. Layout is currently random
+scatter; grid-clustering by faction is a roadmap item.
+
+---
+
+## Architecture
+
+Five processes in production, all TypeScript on Bun, all in one Docker Compose, single VPS.
+
+```
+Browser (visitor / staff / wall)
+   │ HTTP + session cookie (.oniondao.dev)
+   ▼
+webapp        SvelteKit + adapter-node     :3101
+   │ /v1/*  (reverse-proxied in prod, vite-proxied in dev)
+   ▼
+services/api   Hono REST + auth            :3100 ───┐
+   │ SQL                                            │ HTTP
+   ▼                                                ▼
+PostgreSQL  ◀── shared with landing-2026 ──    services/inference  :3102
+   ▲                                                │
+   │ SQL                                            │  Vercel AI SDK
+services/tick  Bun loop, every 5min                 ▼
+                                              OpenAI-compatible endpoint
+                                                 (OpenAI / Groq / etc.)
+```
+
+### Schema ownership
+
+| Owned by | Tables |
+|---|---|
+| **nullv2** | humans, faction_standing, resource_inventory, residents, resident_memories, resident_messages, library_of_souls, workshops, workshop_attendance, shard_ledger, attention_ledger, resource_grants, human_achievements, print_jobs, parcels, **letters** |
+| **landing-2026** (read-only here) | users, sessions, magic_links |
+
+`drizzle.config.ts` points only at `src/schema/`. `src/external/` is excluded so a
+`drizzle-kit generate` will never touch landing-2026's tables.
+
+### Static vs dynamic
+
+The four factions, five rooms, twelve resources, eleven achievements, four standing
+tiers, four needs, five emotions — all **static TS constants in `@nullv2/types`**, not
+DB rows. Adding a faction or achievement is a code change, not data entry.
+
+### Repo layout
 
 ```
 nullv2/
 ├── packages/
-│   ├── types/                # @nullv2/types — factions, resources, achievements, standing
-│   ├── db/                   # @nullv2/db — Drizzle schema, migrations, seed, db client
-│   │   ├── src/schema/       # tables we own + migrate
-│   │   ├── src/external/     # tables we read (landing-2026's users/sessions)
-│   │   └── src/seed.ts       # idempotent flagship seeding
-│   └── auth/                 # @nullv2/auth — session resolver + Hono middlewares
+│   ├── types/           # factions, resources, achievements, rooms, birth, emotions,
+│   │                    # letters, spark
+│   ├── db/              # Drizzle schema (owned + external), migrations, seed, client
+│   └── auth/            # session resolver + Hono middleware (requireVisitor/Admin)
 ├── services/
-│   ├── api/                  # @nullv2/api — Hono REST gateway (:3100)
-│   │   └── src/routes/       # me, factions, workshops, residents, achievements, wall, print-jobs
-│   ├── tick/                 # @nullv2/tick — 5-min worker (attention/lifespan decay + deaths)
-│   └── inference/            # @nullv2/inference — Vercel AI SDK proxy (:3102)
-├── webapp/                   # SvelteKit + adapter-node (:3101)
-│   └── src/routes/
-│       ├── /                 # public landing
-│       ├── /dashboard        # visitor pages (auth-gated)
-│       ├── /staff            # admin pages (admin-gated)
-│       └── /wall             # public kiosk display
-├── scripts/
-│   ├── dev-setup.sh          # start postgres + migrate + seed
-│   ├── dev-teardown.sh       # destructive: drop volumes
-│   └── dev-fake-session.sh   # mint a local session cookie
-├── docker-compose.yml        # dev: postgres only
-├── docker-compose.prod.yml   # prod overlay: + api, tick, inference, webapp
-├── tsconfig.base.json        # strict, noUncheckedIndexedAccess, isolatedModules
-├── bunfig.toml               # linker = isolated (per-workspace node_modules)
-├── README.md                 # this file
-└── CLAUDE.md                 # AI-assistant context
+│   ├── api/             # Hono REST gateway (:3100)
+│   ├── tick/            # 5-min worker; decay, deaths, ambient
+│   └── inference/       # Vercel AI SDK proxy (:3102) + in-process lib export
+├── webapp/              # SvelteKit (:3101): /dashboard, /rooms, /inbox, /residents,
+│                        # /wall, /staff
+├── scripts/             # dev-setup, dev-teardown, dev-fake-session
+├── docker-compose.yml         # dev: postgres only
+└── docker-compose.prod.yml    # prod overlay: + api, tick, inference, webapp
 ```
 
 ---
 
-## Quick Start (Local Dev)
+## Local Development
 
 ### Prerequisites
 
 - **Bun** ≥ 1.2 (`curl -fsSL https://bun.sh/install | bash`)
 - **Docker** + Docker Compose
-- (optional) `psql` for poking the DB directly
+- (optional) `psql`
 
 ### One-shot setup
 
 ```bash
 cd nullv2
-bun install                    # installs all workspaces with isolated linker
-cp .env.example .env           # tweak as needed; defaults are fine for local dev
-./scripts/dev-setup.sh         # starts Postgres on :5433, runs migrations, seeds flagships
+bun install
+cp .env.example .env
+./scripts/dev-setup.sh    # starts Postgres on :5433, migrates, seeds flagships
 ```
 
-What `dev-setup.sh` does:
-
-1. Starts the `postgres` service from `docker-compose.yml`.
-2. Creates **local stub tables** for `users`/`sessions` so you can run the full stack
-   without landing-2026. (In prod, these come from the shared DB.)
-3. Runs `bun run db:generate` (compiles Drizzle schema into SQL).
-4. Runs `bun run db:migrate` (applies migrations).
-5. Runs `bun run db:seed` (inserts the four flagship faction reps).
+`dev-setup.sh` also creates **local stub tables** for `users` / `sessions` so the full
+stack runs without landing-2026.
 
 ### Run the stack
 
-Each command in its own terminal:
+Each in its own terminal:
 
 ```bash
-bun run dev:api         # API on :3100
-bun run dev:tick        # tick worker (logs every 5 minutes)
-bun run dev:inference   # inference service on :3102
-bun run dev:web         # SvelteKit dev server on :3101
+bun run dev:api          # :3100
+bun run dev:tick         # logs every 5 minutes
+bun run dev:inference    # :3102
+bun run dev:web          # SvelteKit on :3101 (proxies /v1/* → :3100)
 ```
 
-The Vite dev server proxies `/v1/*` to the API automatically.
-
-### Get a working session
-
-Without landing-2026 running locally, use the fake-session script:
+### Mint a local session
 
 ```bash
 ./scripts/dev-fake-session.sh you@example.com "You"
+# prints a curl command + cookie value; paste into browser DevTools
 ```
 
-It prints a `curl` command with the right `Cookie` header. To use the cookie in a browser,
-copy it manually via DevTools (Application → Cookies → `session=<token>`).
-
-To make yourself an admin (for `/staff`), connect to Postgres and:
+Make yourself admin (for `/staff`):
 
 ```sql
 UPDATE users SET is_admin = true WHERE email = 'you@example.com';
 ```
 
-### Verify
+### Common dev tasks
 
-- `http://localhost:3100/healthz` → `{ok: true}`
-- `http://localhost:3100/v1/factions` → 4 factions, 12 resources
-- `http://localhost:3100/v1/me` (with cookie) → your visitor record
-- `http://localhost:3101/dashboard` → visitor dashboard with faction standings
-- `http://localhost:3101/wall` → wall display (empty until parcels exist)
+| I want to… | Do this |
+|---|---|
+| Add a faction / resource / achievement / room / emotion | Edit the relevant file in `packages/types/src/`. No migration. |
+| Add a DB table or column | Edit `packages/db/src/schema/`, then `bun run db:generate && bun run db:migrate`. |
+| Add an API endpoint | New file under `services/api/src/routes/`, mount in `src/index.ts`. |
+| Swap inference provider | Edit `INFERENCE_BASE_URL / API_KEY / MODEL` in `.env`. Restart inference. |
+| Wipe & reset dev DB | `./scripts/dev-teardown.sh && ./scripts/dev-setup.sh` |
+| Typecheck | `bun run typecheck` (strict + `noUncheckedIndexedAccess`) |
 
 ---
 
 ## Production Deploy
 
-Target: **single cloud VPS** (Hetzner / DigitalOcean / Fly machine) running everything
-under Docker Compose.
-
-### Topology
-
 ```
-Internet ──▶ Reverse proxy (Caddy / Cloudflare Tunnel)
-                  │
-                  ├─ city.oniondao.dev/*       → webapp:3101
-                  ├─ city.oniondao.dev/v1/*    → api:3100
-                  └─ inference.oniondao.dev/*  → inference:3102  (optional, internal-only is fine)
+Internet
+   │
+   ▼
+Reverse proxy (Caddy / Cloudflare Tunnel — bring your own)
+   ├─ city.oniondao.dev/*       → webapp:3101
+   ├─ city.oniondao.dev/v1/*    → api:3100
+   └─ (inference is internal-only)
 
-Docker network:
-  postgres:5432  ◀── api ──▶ inference
-                 ◀── tick
-                 ◀── webapp
+Docker network: postgres ── api ── inference
+                         └── tick
+                         └── webapp
 ```
-
-The reverse proxy is **not in the compose file** — bring your own. Caddy with a 4-line
-Caddyfile is the simplest path.
 
 ### Steps
 
 1. Provision a VPS with Docker.
-2. Clone the repo. `cd nullv2`.
-3. Copy `.env.example` to `.env`. Set:
-   - `DATABASE_URL=postgresql://nullv2:<strong-password>@postgres:5432/nullv2`
+2. Set `.env`:
+   - `DATABASE_URL=postgresql://nullv2:<pw>@postgres:5432/nullv2` (or the shared landing-2026 Postgres)
    - `AUTH_COOKIE_DOMAIN=.oniondao.dev`
-   - `INFERENCE_API_KEY=<your-key>` and `INFERENCE_BASE_URL`/`INFERENCE_MODEL` if not OpenAI.
-4. Build & run:
-   ```bash
-   bun run docker:build
-   bun run docker:up
-   ```
-5. First-run migrations + seed (one-time):
+   - `INFERENCE_API_KEY=<key>`, optionally `INFERENCE_BASE_URL` / `INFERENCE_MODEL`
+3. `bun run docker:build && bun run docker:up`
+4. First-run migrations + seed:
    ```bash
    docker compose exec api bun run --filter @nullv2/db migrate
    docker compose exec api bun run --filter @nullv2/db seed
    ```
-6. Set up the reverse proxy with TLS pointing at the four host ports.
+5. Reverse proxy with TLS pointing at host ports 3100/3101.
 
-### Shared-DB caveat
-
-For prod, **point `DATABASE_URL` at the same Postgres landing-2026 uses** so the `users` and
-`sessions` tables resolve. The compose `postgres` service is only for **dev**; in prod, you
-should override it (set `services.postgres.profiles` to `[dev]`, or just don't include
-`docker-compose.yml` in the prod stack and run a managed Postgres).
-
-A safe pattern: keep landing-2026's Railway Postgres as the source of truth, and run only
-api/tick/inference/webapp containers via `docker-compose.prod.yml`. Drop the local postgres
-from prod overlay or override it to a no-op.
+**Shared-DB caveat**: for prod, point `DATABASE_URL` at the same Postgres landing-2026
+uses, so `users` and `sessions` resolve. The compose `postgres` service is dev-only.
 
 ---
 
 ## API Reference
 
-All endpoints are JSON. Auth: `Cookie: session=<token>`. Errors are `{error: "code", ...}`
-with appropriate HTTP status.
+JSON in / out. Auth via `Cookie: session=<token>` except where noted. Errors are
+`{ error: 'snake_case_code', … }` with appropriate HTTP status.
 
-### Identity
-
-| Method | Path | Auth | Description |
+| Domain | Method | Path | Auth |
 |---|---|---|---|
-| GET | `/v1/me` | visitor | Authed user + game state (shards, standing, inventory) |
-
-### Static catalog
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/v1/factions` | public | All four factions + their resources |
-| GET | `/v1/factions/:id` | public | One faction with its resources |
-
-### Workshops
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/v1/workshops` | visitor | Upcoming + active workshops |
-| POST | `/v1/workshops/scan` | admin | Award Shards to a visitor for attending |
-
-`POST /v1/workshops/scan` body: `{ qrCode, humanId? OR humanEmail? }` — exactly one of
-`humanId` (UUID) or `humanEmail`.
-
-### Residents
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/v1/residents` | visitor | All alive residents |
-| GET | `/v1/residents/:id` | visitor | One resident + recent messages |
-| POST | `/v1/residents/:id/chat` | visitor | Chat + optionally purchase a resource |
-
-`POST /v1/residents/:id/chat` body: `{ message, shardsOffered, requestedResourceId? }`.
-Returns `{ residentMessage, grantedResource?, newShardBalance, residentAttention, standing }`.
-
-### Achievements
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/v1/achievements` | visitor | All achievements with `earned` + `hasIngredients` flags |
-| POST | `/v1/achievements/redeem` | visitor | Redeem an achievement (burns inventory, queues print) |
-
-`POST /v1/achievements/redeem` body: `{ achievementId }`. Returns `{ achievement, claimCode, parcels }`.
-
-### Print queue
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/v1/print-jobs` | admin | Queued + printing jobs, oldest first |
-| POST | `/v1/print-jobs/:id/status` | admin | Update status (`printing`/`ready`/`claimed`/`failed`) |
-
-### Wall display
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/v1/wall/state` | public | Parcels + leaderboard + recent births/deaths/achievements |
-
-### Inference (internal — port 3102)
-
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| GET | `/healthz` | none | Health + active model + base URL |
-| POST | `/v1/inference/complete` | none | Generate a resident reply |
-
-Not exposed publicly. Reachable only from `services/api` on the Docker network.
+| Identity | GET | `/v1/me` | visitor |
+| Static catalog | GET | `/v1/factions`, `/v1/factions/:id` | public |
+| Workshops | GET | `/v1/workshops` | visitor |
+| | POST | `/v1/workshops/scan` | admin |
+| Residents | GET | `/v1/residents`, `/v1/residents/:id` | visitor |
+| | POST | `/v1/residents/:id/chat` | visitor |
+| | POST | `/v1/residents/:id/refill` | visitor |
+| Rooms | GET | `/v1/rooms`, `/v1/rooms/:slug` | visitor |
+| | POST | `/v1/rooms/birth` | visitor |
+| Letters | GET | `/v1/letters`, `/v1/letters/:id` | visitor |
+| | POST | `/v1/letters/:id/archive`, `/v1/letters/mark-all-read` | visitor |
+| Achievements | GET | `/v1/achievements` | visitor |
+| | POST | `/v1/achievements/redeem` | visitor |
+| Print queue | GET | `/v1/print-jobs` | admin |
+| | POST | `/v1/print-jobs/:id/status` | admin |
+| Library | GET | `/v1/library`, `/v1/library/:residentId` | visitor |
+| Wall | GET | `/v1/wall/state` | public |
+| Inference (internal :3102) | POST | `/v1/inference/complete` | none (internal-only) |
 
 ---
 
-## Database Schema
+## Known Gaps & Inconsistencies
 
-Owned by `@nullv2/db` (migrations live in `packages/db/migrations/`):
+A whole-codebase audit (run on the commit producing this README) flagged the following.
+Severity-tagged so you know what blocks visitors vs. what's just untidy.
 
-| Table | Purpose |
+### Fixed in the current commit
+
+- Library of Souls is now built end-to-end: `/library` list + `/library/[residentId]`
+  detail in the webapp, `GET /v1/library` + `GET /v1/library/:residentId` in the API.
+- The `/embassy` nav target now resolves to a visitor-facing front-desk page
+  (claim codes + workshop schedule + civic-achievement reference).
+- `/logout` is a real endpoint that clears the shared `session` cookie.
+- The 10 schema-vs-types drift items below have all been hoisted into typed
+  catalogs under `@nullv2/types` and pinned to schema columns via
+  `text(…).$type<…>()`. A typo at any write site now fails typecheck.
+- `failed` print-jobs now correctly set `completedAt` (via the shared
+  `isPrintJobTerminal()` helper).
+
+Typed catalogs added in `@nullv2/types`:
+
+| File | Exports |
 |---|---|
-| `humans` | 1:1 with `users` — gameplay state (shard_balance, badge_id) |
-| `faction_standing` | (human, faction) → cumulative points |
-| `resource_inventory` | (human, resource) → quantity |
-| `residents` | name, faction, persona, attention, lifespan, status |
-| `resident_memories` | birth/interaction/reflection/death rows |
-| `resident_messages` | append-only chat + public utterances |
-| `library_of_souls` | death snapshots (epitaph, lived_ticks, cause) |
-| `workshops` | title, faction, kind, qr_code, shard_reward, schedule |
-| `workshop_attendance` | (workshop, human) → scanned_at |
-| `shard_ledger` | append-only audit of every shard movement |
-| `attention_ledger` | append-only audit of every attention movement |
-| `resource_grants` | resident-issued resources |
-| `human_achievements` | earned achievements |
-| `print_jobs` | print queue with claim codes |
-| `parcels` | territory grid (faction, x, y) |
+| `residents.ts` | `RESIDENT_STATUS_IDS`, `DEATH_CAUSE_IDS`, guards |
+| `messages.ts` | `SPEAKER_IDS`, `MESSAGE_CHANNEL_IDS`, `MEMORY_KIND_IDS`, guards |
+| `ledger.ts` | `SHARD_LEDGER_REASON_IDS`, `ATTENTION_LEDGER_REASON_IDS`, `REF_KIND_IDS`, guards |
+| `print-jobs.ts` | `PRINT_JOB_STATUS_IDS`, `PRINT_JOB_TRANSITION_IDS`, `isPrintJobTerminal()` |
+| `workshops.ts` | `WORKSHOP_STATUS_IDS`, `WORKSHOP_KIND_IDS`, guards |
+| `letters.ts` | `LETTER_KIND_IDS`, `isLetterKind()` |
 
-Read-only references (owned by landing-2026, declared in `packages/db/src/external/`):
+### Still outstanding
 
-| Table | Purpose |
-|---|---|
-| `users` | identity (id, email, name, is_admin, avatar_url, ...) |
-| `sessions` | opaque session tokens + expiry |
+- **BLOCKER — `/dashboard/achievements` redeem button is unwired.**
+  The endpoint exists (`POST /v1/achievements/redeem`) but the button at
+  `webapp/src/routes/dashboard/achievements/+page.svelte:220` has no `onclick` /
+  form action. Visitors cannot redeem.
+- **DRIFT — Ambient message + reflection inserts are not transactional.**
+  `services/tick/src/ambient.ts:136-148` performs the `resident_messages` insert
+  and the `resident_memories` insert as separate statements. If the second fails,
+  a shout exists without its reflection memory.
+- **DRIFT — `GET /v1/letters/:id` performs a side-effect write.** Auto-marking
+  `readAt` inside a GET violates REST semantics. Should be
+  `POST /v1/letters/:id/read`.
+- **NIT — `/wall` page hardcodes three stat tiles to 0.**
+  `webapp/src/routes/wall/+page.svelte:87-89` (`residentsAlive`,
+  `soulsArchived`, `daysSinceSeed`) — wall-state endpoint doesn't return them.
 
----
+### Roadmap (intentionally unbuilt)
 
-## Common Dev Tasks
-
-### Add a new faction
-
-You can't really. Four factions is baked into the narrative. But if you did:
-
-1. Add the ID to `FACTION_IDS` in `packages/types/src/factions.ts`.
-2. Add the faction object to `FACTIONS`.
-3. Add three resources to `packages/types/src/resources.ts`.
-4. Add a single-faction achievement to `packages/types/src/achievements.ts`.
-5. Add a flagship resident to `packages/db/src/seed.ts`.
-6. Run `bun run db:seed`. (No migration needed — content is code.)
-
-### Add a new achievement
-
-1. Append to `ACHIEVEMENT_IDS` and `ACHIEVEMENTS` in `packages/types/src/achievements.ts`.
-2. Set `recipe` to the resource cost.
-3. That's it. No migration. The redeem endpoint validates against the constants at request time.
-
-### Add a new API endpoint
-
-1. Create a file under `services/api/src/routes/`.
-2. Export a factory function: `export function fooRoute(db: Db) { const r = new Hono(); ... return r; }`.
-3. Mount in `services/api/src/index.ts`: `app.route('/v1/foo', fooRoute(db))`.
-
-### Modify a schema table
-
-1. Edit the relevant file in `packages/db/src/schema/`.
-2. `bun run db:generate` (creates a new migration SQL file).
-3. Review the SQL diff under `packages/db/migrations/`.
-4. `bun run db:migrate` (applies it).
-
-### Change inference provider
-
-Edit `.env`:
-
-```
-INFERENCE_BASE_URL=https://api.together.xyz/v1
-INFERENCE_API_KEY=<key>
-INFERENCE_MODEL=meta-llama/Llama-3.1-70B-Instruct-Turbo
-```
-
-Restart the inference service. No code changes.
-
-### Typecheck
-
-```bash
-bun run typecheck
-```
-
-Strict mode + `noUncheckedIndexedAccess`. Catches missing null guards on `.returning()`
-destructures.
-
-### Wipe and reset the dev DB
-
-```bash
-./scripts/dev-teardown.sh && ./scripts/dev-setup.sh
-```
+- LLM-driven epitaphs (currently templated in `composeEpitaph()` in
+  `services/tick/src/death.ts`).
+- Badge / ESP-NOW integration behind `humans.badge_id`.
+- Wall display: grid-clustered parcels by faction (currently random scatter).
+- CI: typecheck + `drizzle-kit` dry-run on PRs.
 
 ---
-
-## Troubleshooting
-
-**`/v1/me` returns `unauthorized`**
-- Cookie missing or expired. Use `dev-fake-session.sh` to mint a fresh one.
-- In prod: check `AUTH_COOKIE_DOMAIN` matches the domain on the cookie set by landing-2026.
-
-**`/staff` returns 403 / redirects**
-- Your user isn't admin. Run `UPDATE users SET is_admin = true WHERE email = ...` in Postgres.
-
-**Chat returns 502 `inference_failed`**
-- `INFERENCE_API_KEY` not set, or the configured `INFERENCE_BASE_URL` is unreachable.
-- Check `curl http://localhost:3102/healthz` for the live config.
-
-**Workshop scan returns 400 `invalid_body`**
-- The scan endpoint requires either `humanId` (UUID) or `humanEmail` — not both, not neither.
-
-**Wall page shows all factions at 0 parcels**
-- Expected when no achievements have been redeemed yet. The leaderboard always renders all
-  four factions for layout stability.
-
-**Tick worker logs `failed for resident <id>` but the loop keeps going**
-- This is by design — one bad row never kills the loop. Look at the error in the log;
-  it's usually a malformed memory or an SQL constraint violation.
-
-**Drizzle complains about a missing migration**
-- After editing `packages/db/src/schema/`, you must run `bun run db:generate` before
-  `bun run db:migrate`. The generate step writes the SQL diff to disk.
-
----
-
-## Roadmap
-
-Built today:
-- ✅ Static catalog (factions, resources, achievements, standing tiers)
-- ✅ Drizzle schema for 15 owned tables + read-only `users`/`sessions`
-- ✅ Hono API: identity, factions, workshops scan, residents chat, achievements redeem, wall, print queue
-- ✅ Tick worker: attention/lifespan decay, death archival
-- ✅ Inference service: Vercel AI SDK over any OpenAI-compatible endpoint
-- ✅ SvelteKit webapp: visitor dashboard, staff kiosk, wall display
-- ✅ Auth shared with landing-2026 via cookie + DB
-- ✅ Per-service Dockerfiles + prod docker-compose overlay
-- ✅ Strict typecheck passes
-
-Not yet built:
-- ⏳ Visitor chat UI on `/dashboard/residents/:id` (data layer ready)
-- ⏳ Achievements redemption UI on `/dashboard/achievements`
-- ⏳ Library of Souls browsing UI
-- ⏳ Visitor-spawned residents (schema ready; spawn endpoint missing)
-- ⏳ LLM-driven epitaphs in the tick worker (templated for now)
-- ⏳ Badge/ESP-NOW integration behind `humans.badge_id`
-- ⏳ Wall display layout polish (parcels are scatter-random; want grid clustering by faction)
-- ⏳ CI typecheck + drizzle dry-run on PRs
 
 ## License
 

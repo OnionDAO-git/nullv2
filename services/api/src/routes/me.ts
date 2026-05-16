@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { requireVisitor, type AuthVars } from '@nullv2/auth/hono';
 import type { Db } from '@nullv2/db';
 import { schema } from '@nullv2/db';
@@ -18,7 +18,7 @@ export function meRoute(db: Db) {
   r.get('/', async (c) => {
     const { user, human } = c.get('visitor');
 
-    const [standingRows, inventoryRows] = await Promise.all([
+    const [standingRows, inventoryRows, unreadRows] = await Promise.all([
       db
         .select()
         .from(schema.factionStanding)
@@ -27,7 +27,18 @@ export function meRoute(db: Db) {
         .select()
         .from(schema.resourceInventory)
         .where(eq(schema.resourceInventory.humanId, human.id)),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.letters)
+        .where(
+          and(
+            eq(schema.letters.humanId, human.id),
+            isNull(schema.letters.readAt),
+            isNull(schema.letters.archivedAt),
+          ),
+        ),
     ]);
+    const unreadLetters = unreadRows[0]?.count ?? 0;
 
     const standingByFaction = Object.fromEntries(
       FACTION_IDS.map((f) => [f, { points: 0, tier: standingFromPoints(0) }]),
@@ -64,6 +75,7 @@ export function meRoute(db: Db) {
       },
       standing: standingByFaction,
       inventory,
+      unreadLetters,
     });
   });
 

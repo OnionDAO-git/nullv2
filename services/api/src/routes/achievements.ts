@@ -186,6 +186,28 @@ export function achievementsRoute(db: Db) {
         claimCode,
       });
 
+      // Civic letter from "The Embassy" announcing the redemption.
+      await tx.insert(schema.letters).values({
+        humanId: human.id,
+        kind: 'civic',
+        faction: null,
+        residentId: null,
+        fromName: 'The Embassy',
+        fromMonogram: 'E',
+        fromEmotion: 'stillness',
+        subject: `your achievement — ${achievement.name.toLowerCase()}`,
+        preview: `the city records receipt of your contribution. a lanyard has been queued at the print desk. claim code: ${claimCode}.`,
+        body: [
+          `visitor —`,
+          `the city records receipt of your contribution. you have forged ${achievement.name}.`,
+          `a lanyard has been queued at the print desk. claim it with the code: ${claimCode}.`,
+          `your territory has shifted accordingly. step outside and check the wall.`,
+          `— the embassy, filing on behalf of the city`,
+        ].join('\n\n'),
+        refKind: 'achievement',
+        refId: achievement.id,
+      });
+
       const parcels: Array<typeof schema.parcels.$inferSelect> = [];
       for (const faction of achievement.factions) {
         let placed: typeof schema.parcels.$inferSelect | undefined;

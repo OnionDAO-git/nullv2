@@ -4,3 +4,4 @@ export * from './workshops.ts';
 export * from './economy.ts';
 export * from './achievements.ts';
 export * from './parcels.ts';
+export * from './letters.ts';

@@ -14,8 +14,9 @@ async function doTick(): Promise<void> {
   console.log('[tick] starting');
   try {
     const result = await runTick(db);
+    const h = result.ambient.dominantHist;
     console.log(
-      `[tick] done — processed=${result.processed} deaths=${result.deaths} errors=${result.errors} durationMs=${result.durationMs}`,
+      `[tick] done — processed=${result.processed} deaths=${result.deaths} errors=${result.errors} ambient=${result.ambient.succeeded}/${result.ambient.attempted} hunger=${h.hunger} safety=${h.safety} social=${h.social} purpose=${h.purpose} durationMs=${result.durationMs}`,
     );
   } catch (err) {
     console.error('[tick] fatal error during tick:', err);

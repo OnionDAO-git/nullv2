@@ -5,10 +5,17 @@ import { requireVisitor, type AuthVars } from '@nullv2/auth/hono';
 import type { Db } from '@nullv2/db';
 import { schema } from '@nullv2/db';
 import {
+  FACTIONS,
   RESOURCES,
   RESOURCE_IDS,
+  REFILL_ATTENTION_GAIN,
+  REFILL_SHARD_COST,
+  STANDING_TIERS,
+  type EmotionId,
+  type FactionId,
   type Resource,
   type ResourceId,
+  type StandingTier,
   standingFromPoints,
   meetsStanding,
 } from '@nullv2/types';
@@ -40,6 +47,56 @@ async function callInference(residentId: string, humanMessage: string): Promise<
     throw new Error('inference_invalid_reply');
   }
   return { content: json.content };
+}
+
+type ChatTx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+const FACTION_FLAGSHIP_FROM: Record<
+  FactionId,
+  { name: string; monogram: string; emotion: EmotionId }
+> = {
+  solder_saints: { name: 'Brother Solenoid', monogram: 'S', emotion: 'reverie' },
+  hatchery: { name: 'Midwife Lin', monogram: 'L', emotion: 'stillness' },
+  locksmiths: { name: 'The Curator', monogram: 'C', emotion: 'unease' },
+  ledgerwrights: { name: 'Scrivener Mox', monogram: 'M', emotion: 'stillness' },
+};
+
+async function insertStandingLetter(
+  tx: ChatTx,
+  args: {
+    humanId: string;
+    factionId: FactionId;
+    fromTier: StandingTier;
+    toTier: StandingTier;
+  },
+): Promise<void> {
+  const f = FACTIONS[args.factionId];
+  const from = FACTION_FLAGSHIP_FROM[args.factionId];
+  const factionShort = f.name.replace(/^The /, '').toLowerCase();
+  const subject = `your standing has shifted — ${args.toTier}`;
+  const preview = `the ${factionShort} have raised you from ${args.fromTier} to ${args.toTier}. the door will open for you now without asking.`;
+  const body = [
+    `visitor —`,
+    `the ${factionShort} have raised you from ${args.fromTier} to ${args.toTier}.`,
+    `the door will open for you now without asking. some shelves will be unlocked.`,
+    `do not ask why — read what you find, and stay only as long as you must.`,
+    `— ${from.name.toLowerCase()}, for the ${factionShort}`,
+  ].join('\n\n');
+
+  await tx.insert(schema.letters).values({
+    humanId: args.humanId,
+    kind: 'standing',
+    faction: args.factionId,
+    residentId: null,
+    fromName: from.name,
+    fromMonogram: from.monogram,
+    fromEmotion: from.emotion,
+    subject,
+    preview,
+    body,
+    refKind: 'standing',
+    refId: `${args.factionId}:${args.toTier}`,
+  });
 }
 
 export function residentsRoute(db: Db) {
@@ -263,6 +320,20 @@ export function residentsRoute(db: Db) {
         });
       }
 
+      // Read pre-standing so we can detect tier-up post-upsert.
+      const [preStandingRow] = await tx
+        .select()
+        .from(schema.factionStanding)
+        .where(
+          and(
+            eq(schema.factionStanding.humanId, human.id),
+            eq(schema.factionStanding.faction, resident.faction),
+          ),
+        )
+        .limit(1);
+      const prePoints = preStandingRow?.points ?? 0;
+      const preTier = standingFromPoints(prePoints);
+
       const [standing] = await tx
         .insert(schema.factionStanding)
         .values({
@@ -280,12 +351,17 @@ export function residentsRoute(db: Db) {
         .returning();
       if (!standing) throw new Error('chat: failed to upsert faction standing');
 
+      const newTier = standingFromPoints(standing.points);
+      const tierAdvanced =
+        STANDING_TIERS.indexOf(newTier) > STANDING_TIERS.indexOf(preTier);
+
       await tx.insert(schema.residentMessages).values({
         residentId: resident.id,
         humanId: human.id,
         speaker: 'human',
         channel: 'chat',
         content: message,
+        roomId: resident.roomId,
       });
 
       const [residentMsg] = await tx
@@ -296,9 +372,20 @@ export function residentsRoute(db: Db) {
           speaker: 'resident',
           channel: 'chat',
           content: reply.content,
+          roomId: resident.roomId,
         })
         .returning();
       if (!residentMsg) throw new Error('chat: failed to insert resident reply');
+
+      // Standing tier-up letter — fired by the faction flagship.
+      if (tierAdvanced) {
+        await insertStandingLetter(tx, {
+          humanId: human.id,
+          factionId: resident.faction as FactionId,
+          fromTier: preTier,
+          toTier: newTier,
+        });
+      }
 
       const memorySummary = `${message} -> ${reply.content.slice(0, 80)}`;
       await tx.insert(schema.residentMemories).values({
@@ -323,6 +410,79 @@ export function residentsRoute(db: Db) {
       residentAttention: result.residentAttention,
       standing: result.standing,
     });
+  });
+
+  // POST /v1/residents/:id/refill — visitor tops up a resident's attention.
+  //  - debit REFILL_SHARD_COST shards from human
+  //  - credit REFILL_ATTENTION_GAIN attention to resident
+  //  - write ledger rows for both
+  r.post('/:id/refill', async (c) => {
+    const id = c.req.param('id');
+    const { human } = c.get('visitor');
+
+    const [resident] = await db
+      .select()
+      .from(schema.residents)
+      .where(eq(schema.residents.id, id))
+      .limit(1);
+    if (!resident) return c.json({ error: 'resident_not_found' }, 404);
+    if (resident.status === 'dead') return c.json({ error: 'resident_dead' }, 410);
+
+    const [freshHuman] = await db
+      .select()
+      .from(schema.humans)
+      .where(eq(schema.humans.id, human.id))
+      .limit(1);
+    if (!freshHuman) return c.json({ error: 'human_not_found' }, 404);
+    if (freshHuman.shardBalance < REFILL_SHARD_COST) {
+      return c.json(
+        { error: 'insufficient_shards', need: REFILL_SHARD_COST, have: freshHuman.shardBalance },
+        400,
+      );
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const [debited] = await tx
+        .update(schema.humans)
+        .set({
+          shardBalance: sql`${schema.humans.shardBalance} - ${REFILL_SHARD_COST}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.humans.id, human.id))
+        .returning();
+      if (!debited) throw new Error('refill: failed to debit shards');
+
+      await tx.insert(schema.shardLedger).values({
+        humanId: human.id,
+        delta: -REFILL_SHARD_COST,
+        reason: 'refill_attention',
+        refKind: 'resident',
+        refId: resident.id,
+      });
+
+      const [credited] = await tx
+        .update(schema.residents)
+        .set({
+          attentionBalance: sql`${schema.residents.attentionBalance} + ${REFILL_ATTENTION_GAIN}`,
+        })
+        .where(eq(schema.residents.id, resident.id))
+        .returning();
+      if (!credited) throw new Error('refill: failed to credit attention');
+
+      await tx.insert(schema.attentionLedger).values({
+        residentId: resident.id,
+        delta: REFILL_ATTENTION_GAIN,
+        sourceHumanId: human.id,
+        reason: 'mentor_gift',
+      });
+
+      return {
+        newShardBalance: debited.shardBalance,
+        attentionBalance: credited.attentionBalance,
+      };
+    });
+
+    return c.json(result);
   });
 
   return r;

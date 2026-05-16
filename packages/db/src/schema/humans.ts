@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, integer, timestamp, uniqueIndex, primaryKey } from 'drizzle-orm/pg-core';
+import type { FactionId, ResourceId } from '@nullv2/types';
 
 /**
  * Game-specific extension of `users` (owned by landing-2026).
@@ -31,7 +32,7 @@ export const factionStanding = pgTable(
     humanId: uuid('human_id')
       .notNull()
       .references(() => humans.id, { onDelete: 'cascade' }),
-    faction: text('faction').notNull(),
+    faction: text('faction').$type<FactionId>().notNull(),
     points: integer('points').notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -47,7 +48,7 @@ export const resourceInventory = pgTable(
     humanId: uuid('human_id')
       .notNull()
       .references(() => humans.id, { onDelete: 'cascade' }),
-    resourceId: text('resource_id').notNull(),
+    resourceId: text('resource_id').$type<ResourceId>().notNull(),
     quantity: integer('quantity').notNull().default(0),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

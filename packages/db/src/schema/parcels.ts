@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, integer, timestamp, index } from 'drizzle-orm/pg-core';
+import type { AchievementId, FactionId } from '@nullv2/types';
 import { humans } from './humans.ts';
 
 /**
@@ -10,13 +11,13 @@ export const parcels = pgTable(
   'parcels',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    faction: text('faction').notNull(),
+    faction: text('faction').$type<FactionId>().notNull(),
     /** Which human witnessed this parcel into existence. */
     ratifiedByHumanId: uuid('ratified_by_human_id').references(() => humans.id, {
       onDelete: 'set null',
     }),
     /** The achievement that minted the parcel, if applicable. */
-    achievementId: text('achievement_id'),
+    achievementId: text('achievement_id').$type<AchievementId>(),
     /** 1..4 for the four event weeks; null for civic parcels. */
     week: integer('week'),
     x: integer('x').notNull(),
