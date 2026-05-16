@@ -143,14 +143,18 @@ fi
 
 # ---- services ---------------------------------------------------------------
 
+NEW_SERVICES=()
+
 ensure_service() {
   local name="$1"
   # `railway add --service NAME` creates an empty service. If it already exists
-  # the CLI errors; we swallow that and continue.
+  # the CLI errors; we swallow that and continue. Only newly-created services
+  # get deployed below — existing ones are left alone on re-runs.
   if railway add --service "$name" >/dev/null 2>&1; then
     echo "  + created $name"
+    NEW_SERVICES+=("$name")
   else
-    echo "  ✓ $name exists (or add failed — re-check if later steps complain)"
+    echo "  ✓ $name exists (skipping deploy)"
   fi
 }
 
@@ -216,8 +220,18 @@ set_vars webapp \
 
 deploy() {
   local service="$1"
-  echo "▶ deploying $service (detached — check logs in dashboard)"
-  railway up --service "$service" --detach
+  # Only deploy services we just created. Existing services keep whatever
+  # build is already running — re-deploy them manually if needed:
+  #   railway up --service <name> --detach
+  local s
+  for s in "${NEW_SERVICES[@]+"${NEW_SERVICES[@]}"}"; do
+    if [ "$s" = "$service" ]; then
+      echo "▶ deploying $service (detached — check logs in dashboard)"
+      railway up --service "$service" --detach
+      return
+    fi
+  done
+  echo "▶ skipping $service deploy (already exists; run 'railway up --service $service --detach' to force)"
 }
 
 deploy inference

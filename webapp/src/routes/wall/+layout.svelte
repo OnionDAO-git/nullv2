@@ -7,19 +7,10 @@
 </div>
 
 <style>
-  :global(html),
-  :global(body) {
-    margin: 0;
-    padding: 0;
-    background: var(--ground-0);
-    overflow: hidden;
-  }
   .wall-root {
-    width: 100vw;
-    height: 100vh;
     background: var(--ground-0);
+    min-height: 100vh;
     color: var(--text-1);
-    overflow: hidden;
     font-family: var(--sans);
   }
 </style>

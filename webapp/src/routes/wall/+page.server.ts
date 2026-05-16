@@ -34,7 +34,6 @@ interface RecentBirth {
 interface RecentAchievement {
   humanId?: string;
   humanName: string | null;
-  /** Full achievement object as embedded by the API. */
   achievement: { id: string; name: string; kind: string; factions: string[]; flavor: string };
   earnedAt?: string;
 }
@@ -55,21 +54,25 @@ const EMPTY: WallState = {
   recentAchievements: [],
 };
 
-export const load: PageServerLoad = async ({ fetch }) => {
+export const load: PageServerLoad = async ({ fetch, locals }) => {
+  let state: WallState = EMPTY;
   try {
     const res = await fetch('/v1/wall/state');
-    if (!res.ok) return { state: EMPTY };
-    const body = (await res.json()) as Partial<WallState>;
-    return {
-      state: {
+    if (res.ok) {
+      const body = (await res.json()) as Partial<WallState>;
+      state = {
         parcels: body.parcels ?? [],
         leaderboard: body.leaderboard ?? [],
         recentDeaths: body.recentDeaths ?? [],
         recentBirths: body.recentBirths ?? [],
         recentAchievements: body.recentAchievements ?? [],
-      } satisfies WallState,
-    };
+      };
+    }
   } catch {
-    return { state: EMPTY };
+    // Fall through with empty state.
   }
+  return {
+    state,
+    shardBalance: locals.visitor?.human.shardBalance ?? 0,
+  };
 };
