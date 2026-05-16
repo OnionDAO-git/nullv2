@@ -78,6 +78,7 @@ prompt_value  POSTGRES_SERVICE     "landing-2026's Postgres service name" "Postg
 prompt_secret INFERENCE_API_KEY    "INFERENCE_API_KEY"
 prompt_value  INFERENCE_BASE_URL   "INFERENCE_BASE_URL" "https://api.openai.com/v1"
 prompt_value  INFERENCE_MODEL      "INFERENCE_MODEL"    "gpt-4o-mini"
+prompt_value  INFERENCE_MAX_TOKENS "INFERENCE_MAX_TOKENS" "400"
 
 # Railway variable references — resolved at deploy time by Railway, not bash.
 # Single quotes + escaped braces so $POSTGRES_SERVICE interpolates but ${{...}}
@@ -197,7 +198,7 @@ set_vars inference \
   --set "INFERENCE_BASE_URL=$INFERENCE_BASE_URL" \
   --set "INFERENCE_API_KEY=$INFERENCE_API_KEY" \
   --set "INFERENCE_MODEL=$INFERENCE_MODEL" \
-  --set "INFERENCE_MAX_TOKENS=400"
+  --set "INFERENCE_MAX_TOKENS=$INFERENCE_MAX_TOKENS"
 
 set_vars webapp \
   --set "RAILWAY_DOCKERFILE_PATH=webapp/Dockerfile" \
