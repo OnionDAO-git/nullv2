@@ -61,6 +61,17 @@ prompt_secret() {
   printf -v "$var" '%s' "$val"
 }
 
+# Like prompt_secret but blank is fine — used for keys that some OpenAI-compatible
+# endpoints (e.g. local LM Studio) don't require. Empty values are skipped at
+# variable-set time below so we never push an empty API key to Railway.
+prompt_optional_secret() {
+  local var="$1" prompt="$2"
+  if [ -n "${!var:-}" ]; then return; fi
+  read -r -s -p "$prompt (leave blank if endpoint doesn't need one): " val
+  echo
+  printf -v "$var" '%s' "$val"
+}
+
 prompt_value() {
   local var="$1" prompt="$2" default="${3:-}"
   if [ -n "${!var:-}" ]; then return; fi
@@ -75,7 +86,7 @@ prompt_value() {
 
 echo "▶ collecting config (pre-set as env vars to skip prompts)"
 prompt_value  POSTGRES_SERVICE     "landing-2026's Postgres service name" "Postgres"
-prompt_secret INFERENCE_API_KEY    "INFERENCE_API_KEY"
+prompt_optional_secret INFERENCE_API_KEY "INFERENCE_API_KEY"
 prompt_value  INFERENCE_BASE_URL   "INFERENCE_BASE_URL" "https://api.openai.com/v1"
 prompt_value  INFERENCE_MODEL      "INFERENCE_MODEL"    "gpt-4o-mini"
 prompt_value  INFERENCE_MAX_TOKENS "INFERENCE_MAX_TOKENS" "400"
@@ -90,8 +101,16 @@ DB_URL_REF="\${{${POSTGRES_SERVICE}.DATABASE_URL}}"
 DB_PUBLIC_URL_REF="\${{${POSTGRES_SERVICE}.DATABASE_PUBLIC_URL}}"
 
 echo
-echo "⚠  This will add 4 nullv2 services into landing-2026's Railway project"
-echo "   and reference its Postgres at: $DB_URL_REF"
+echo "⚠  This will add up to 4 nullv2 services (api, tick, inference, webapp)"
+echo "   into landing-2026's Railway project and reference its Postgres at:"
+echo "     $DB_URL_REF"
+echo
+echo "   Idempotency: services that ALREADY EXIST in this project will NOT"
+echo "   be re-created or re-deployed. Their env vars WILL be overwritten"
+echo "   from this script's values (so they stay in sync). To force a"
+echo "   redeploy of an existing service after vars change, run:"
+echo "     railway up --service <name> --detach"
+echo
 echo "   Migrations will run against the SHARED prod DB. nullv2 only touches"
 echo "   its own tables (drizzle.config.ts excludes the external/ schema)."
 read -r -p "Continue? [y/N] " ok
@@ -151,14 +170,14 @@ ensure_service() {
   # the CLI errors; we swallow that and continue. Only newly-created services
   # get deployed below — existing ones are left alone on re-runs.
   if railway add --service "$name" >/dev/null 2>&1; then
-    echo "  + created $name"
+    echo "  + created $name (will deploy)"
     NEW_SERVICES+=("$name")
   else
-    echo "  ✓ $name exists (skipping deploy)"
+    echo "  ✓ $name already exists — NOT re-creating, NOT re-deploying"
   fi
 }
 
-echo "▶ ensuring services"
+echo "▶ ensuring services (existing services are kept as-is; only missing ones are created)"
 ensure_service api
 ensure_service tick
 ensure_service inference
@@ -194,15 +213,23 @@ set_vars tick \
   --set "DATABASE_URL=$DB_URL_REF" \
   --set "TICK_INTERVAL_MS=300000"
 
-set_vars inference \
-  --set "RAILWAY_DOCKERFILE_PATH=services/inference/Dockerfile" \
-  --set "DATABASE_URL=$DB_URL_REF" \
-  --set "INFERENCE_PORT=3102" \
-  --set "PORT=3102" \
-  --set "INFERENCE_BASE_URL=$INFERENCE_BASE_URL" \
-  --set "INFERENCE_API_KEY=$INFERENCE_API_KEY" \
-  --set "INFERENCE_MODEL=$INFERENCE_MODEL" \
+# INFERENCE_API_KEY is optional (blank for endpoints like local LM Studio that
+# don't require auth). Build the args array, then append the key only if set.
+inference_vars=(
+  --set "RAILWAY_DOCKERFILE_PATH=services/inference/Dockerfile"
+  --set "DATABASE_URL=$DB_URL_REF"
+  --set "INFERENCE_PORT=3102"
+  --set "PORT=3102"
+  --set "INFERENCE_BASE_URL=$INFERENCE_BASE_URL"
+  --set "INFERENCE_MODEL=$INFERENCE_MODEL"
   --set "INFERENCE_MAX_TOKENS=$INFERENCE_MAX_TOKENS"
+)
+if [ -n "${INFERENCE_API_KEY:-}" ]; then
+  inference_vars+=(--set "INFERENCE_API_KEY=$INFERENCE_API_KEY")
+else
+  echo "  · INFERENCE_API_KEY blank — not setting on inference service"
+fi
+set_vars inference "${inference_vars[@]}"
 
 set_vars webapp \
   --set "RAILWAY_DOCKERFILE_PATH=webapp/Dockerfile" \
