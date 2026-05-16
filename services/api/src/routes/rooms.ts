@@ -35,6 +35,8 @@ const birthBodySchema = z.object({
   aesthetic: z.string().max(200).optional(),
   /** Optional override; defaults to faction home room. */
   roomId: z.enum(ROOM_IDS as unknown as [RoomId, ...RoomId[]]).optional(),
+  /** Public URL of an uploaded profile picture (already PUT to the bucket). */
+  avatarUrl: z.string().url().max(2000).optional(),
 });
 
 function composePersonaFromBirth(input: {
@@ -177,6 +179,7 @@ export function roomsRoute(db: Db) {
     const alignment = parsed.data.alignment ?? '';
     const quirks = parsed.data.quirks ?? '';
     const aesthetic = parsed.data.aesthetic ?? '';
+    const avatarUrl = parsed.data.avatarUrl ?? null;
     const roomId = parsed.data.roomId ?? FACTION_HOME_ROOM[faction];
     if (!isRoomId(roomId)) {
       return c.json({ error: 'invalid_room' }, 400);
@@ -246,6 +249,7 @@ export function roomsRoute(db: Db) {
           alignment,
           quirks,
           aesthetic,
+          avatarUrl,
           ownerHumanId: human.id,
           attentionBalance: BIRTH_SEED_ATTENTION,
           lifespanTicksTotal: BIRTH_LIFESPAN_TICKS,

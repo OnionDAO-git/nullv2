@@ -1,5 +1,6 @@
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm';
-import { schema, type Db } from '@nullv2/db';
+import * as schema from './schema/index.ts';
+import type { Db } from './client.ts';
 import { FACTIONS, type DeathCause } from '@nullv2/types';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
@@ -36,7 +37,9 @@ function composeLetterBody(
   const causeLine =
     cause === 'lifespan'
       ? `i had used up my allotted ticks; ${livedTicks} of them, in the end.`
-      : `the room went quiet, then quieter. nobody refilled the lamp.`;
+      : cause === 'attention'
+        ? `the room went quiet, then quieter. nobody refilled the lamp.`
+        : `the embassy called my name. some things end before they finish.`;
 
   const lastBit = lastLine
     ? `before i stopped, i remember saying:\n\n"${lastLine.slice(0, 240)}"\n`
@@ -126,7 +129,9 @@ export async function killResident(
     const preview =
       cause === 'lifespan'
         ? `i had used up my allotted ticks. before i stopped, i wanted you to have this letter…`
-        : `the room went quiet, then quieter. nobody refilled the lamp. before i stopped, i wanted you to have this letter…`;
+        : cause === 'attention'
+          ? `the room went quiet, then quieter. nobody refilled the lamp. before i stopped, i wanted you to have this letter…`
+          : `the embassy called my name. before i stopped, i wanted you to have this letter…`;
 
     const body = composeLetterBody(resident, cause, livedTicks, lastLine);
 

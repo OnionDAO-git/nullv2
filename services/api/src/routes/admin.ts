@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
-import { eq, ilike, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAdmin, type AuthVars } from '@nullv2/auth/hono';
 import { ensureHuman } from '@nullv2/auth';
-import { external, schema, type Db } from '@nullv2/db';
+import { external, schema, killResident, type Db } from '@nullv2/db';
+import { FACTION_IDS, type FactionId } from '@nullv2/types';
 
 const grantBodySchema = z
   .object({
@@ -17,6 +18,12 @@ const grantBodySchema = z
     (b) => [b.humanId, b.userId, b.email].filter(Boolean).length === 1,
     'Provide exactly one of humanId, userId, or email',
   );
+
+const residentPatchSchema = z.object({
+  avatarUrl: z.string().url().max(2000).nullable().optional(),
+});
+
+const RESIDENT_LIST_LIMIT = 200;
 
 export function adminRoute(db: Db) {
   const r = new Hono<{ Variables: AuthVars }>();
@@ -143,6 +150,95 @@ export function adminRoute(db: Db) {
       },
       admin: { userId: admin.user.id, email: admin.user.email },
     });
+  });
+
+  // GET /v1/admin/residents — list residents for the admin console.
+  // Default to alive only; pass ?status=all to include the dead.
+  r.get('/residents', async (c) => {
+    const q = (c.req.query('q') ?? '').trim();
+    const factionParam = c.req.query('faction');
+    const statusParam = c.req.query('status') ?? 'alive';
+
+    const conditions = [] as ReturnType<typeof eq>[];
+    if (statusParam !== 'all') {
+      conditions.push(eq(schema.residents.status, 'alive'));
+    }
+    if (factionParam && (FACTION_IDS as readonly string[]).includes(factionParam)) {
+      conditions.push(eq(schema.residents.faction, factionParam as FactionId));
+    }
+    if (q.length > 0) {
+      conditions.push(ilike(schema.residents.name, `%${q}%`));
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const rows = await db
+      .select({
+        id: schema.residents.id,
+        name: schema.residents.name,
+        faction: schema.residents.faction,
+        emotion: schema.residents.emotion,
+        status: schema.residents.status,
+        roomId: schema.residents.roomId,
+        attentionBalance: schema.residents.attentionBalance,
+        lifespanTicksTotal: schema.residents.lifespanTicksTotal,
+        lifespanTicksRemaining: schema.residents.lifespanTicksRemaining,
+        avatarUrl: schema.residents.avatarUrl,
+        ownerHumanId: schema.residents.ownerHumanId,
+        bornAt: schema.residents.bornAt,
+        diedAt: schema.residents.diedAt,
+      })
+      .from(schema.residents)
+      .where(where)
+      .orderBy(desc(schema.residents.bornAt))
+      .limit(RESIDENT_LIST_LIMIT);
+
+    return c.json({ residents: rows });
+  });
+
+  // PATCH /v1/admin/residents/:id — currently scoped to avatarUrl. Pass null to
+  // clear. Other fields can be added here later; the schema gate keeps it tight.
+  r.patch('/residents/:id', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json().catch(() => null);
+    const parsed = residentPatchSchema.safeParse(body);
+    if (!parsed.success) {
+      return c.json({ error: 'invalid_body', issues: parsed.error.flatten() }, 400);
+    }
+    if (parsed.data.avatarUrl === undefined) {
+      return c.json({ error: 'no_fields_to_update' }, 400);
+    }
+
+    const [updated] = await db
+      .update(schema.residents)
+      .set({ avatarUrl: parsed.data.avatarUrl })
+      .where(eq(schema.residents.id, id))
+      .returning();
+    if (!updated) return c.json({ error: 'resident_not_found' }, 404);
+
+    return c.json({ resident: updated });
+  });
+
+  // POST /v1/admin/residents/:id/kill — admin-induced early death. Goes through
+  // the same killResident path the tick worker uses, so the death is permanent,
+  // archived in library_of_souls, and triggers epitaph letters.
+  r.post('/residents/:id/kill', async (c) => {
+    const id = c.req.param('id');
+    const [resident] = await db
+      .select()
+      .from(schema.residents)
+      .where(eq(schema.residents.id, id))
+      .limit(1);
+    if (!resident) return c.json({ error: 'resident_not_found' }, 404);
+    if (resident.status === 'dead') {
+      return c.json({ error: 'already_dead' }, 409);
+    }
+
+    const now = new Date();
+    await db.transaction(async (tx) => {
+      await killResident(tx, resident, 'admin', now);
+    });
+
+    return c.json({ ok: true, residentId: id, diedAt: now.toISOString() });
   });
 
   return r;

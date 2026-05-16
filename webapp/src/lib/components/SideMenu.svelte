@@ -26,7 +26,7 @@
     unreadCount = 0,
     standings = [],
   }: {
-    active: NavId;
+    active: NavId | null;
     shardBalance?: number;
     visitorHandle?: string;
     unreadCount?: number;

@@ -1,6 +1,5 @@
 import { eq, and } from 'drizzle-orm';
-import { schema, type Db } from '@nullv2/db';
-import { killResident } from './death.ts';
+import { schema, type Db, killResident } from '@nullv2/db';
 import { runAmbient, ambientEnabledFromEnv, type AmbientResult } from './ambient.ts';
 
 type Resident = typeof schema.residents.$inferSelect;

@@ -29,6 +29,9 @@ export const residents = pgTable(
     alignment: text('alignment').notNull().default(''),
     quirks: text('quirks').notNull().default(''),
     aesthetic: text('aesthetic').notNull().default(''),
+    /** Public URL to a profile picture stored in the bucket. Optional — most
+     *  residents will fall back to the stained-glass monogram. */
+    avatarUrl: text('avatar_url'),
     /** Optional spawning human; null for team-seeded flagship residents. */
     ownerHumanId: uuid('owner_human_id').references(() => humans.id, { onDelete: 'set null' }),
     /** Attention balance — humans spend Shards on a resident; that flows here. Each tick deducts 1. */
@@ -100,6 +103,8 @@ export const libraryOfSouls = pgTable('library_of_souls', {
   name: text('name').notNull(),
   faction: text('faction').$type<FactionId>().notNull(),
   ownerHumanId: uuid('owner_human_id').references(() => humans.id, { onDelete: 'set null' }),
+  /** Snapshot of the resident's avatar at the moment of death. */
+  avatarUrl: text('avatar_url'),
   /** Composed epitaph — drawn from memories + persona. */
   epitaph: text('epitaph').notNull(),
   livedTicks: integer('lived_ticks').notNull(),

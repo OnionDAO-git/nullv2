@@ -12,6 +12,7 @@ import { roomsRoute } from './routes/rooms.ts';
 import { lettersRoute } from './routes/letters.ts';
 import { libraryRoute } from './routes/library.ts';
 import { adminRoute } from './routes/admin.ts';
+import { uploadsRoute } from './routes/uploads.ts';
 
 const app = new Hono();
 
@@ -31,6 +32,7 @@ app.route('/v1/rooms', roomsRoute(db));
 app.route('/v1/letters', lettersRoute(db));
 app.route('/v1/library', libraryRoute(db));
 app.route('/v1/admin', adminRoute(db));
+app.route('/v1/uploads', uploadsRoute(db));
 
 const port = Number(process.env.API_PORT ?? 3100);
 console.log(`[nullv2-api] listening on :${port}`);

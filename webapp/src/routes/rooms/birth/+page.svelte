@@ -32,6 +32,16 @@
   let submitting = $state(false);
   let errorMsg = $state<string | null>(null);
 
+  // Avatar upload state.
+  const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_AVATAR_BYTES = 10 * 1024 * 1024;
+  let avatarFile = $state<File | null>(null);
+  let avatarPreviewUrl = $state<string | null>(null);
+  let avatarUploadedUrl = $state<string | null>(null);
+  let avatarUploading = $state(false);
+  let avatarError = $state<string | null>(null);
+  let avatarInputEl: HTMLInputElement | null = null;
+
   const COSTS = [
     { label: 'Quickening', cost: BIRTH_QUICKENING },
     { label: 'Soul file inscription', cost: BIRTH_INSCRIPTION },
@@ -61,11 +71,91 @@
     return `${hrs}h ${mins}m`;
   }
 
+  function clearAvatar() {
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    avatarFile = null;
+    avatarPreviewUrl = null;
+    avatarUploadedUrl = null;
+    avatarError = null;
+    if (avatarInputEl) avatarInputEl.value = '';
+  }
+
+  async function onAvatarChange(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    avatarInputEl = input;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      clearAvatar();
+      return;
+    }
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      avatarError = 'image must be jpeg, png, or webp.';
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      avatarError = 'image must be under 10 MB.';
+      return;
+    }
+    if (avatarPreviewUrl) URL.revokeObjectURL(avatarPreviewUrl);
+    avatarFile = file;
+    avatarPreviewUrl = URL.createObjectURL(file);
+    avatarUploadedUrl = null;
+    avatarError = null;
+  }
+
+  async function uploadAvatarIfNeeded(): Promise<string | null> {
+    if (!avatarFile) return null;
+    if (avatarUploadedUrl) return avatarUploadedUrl;
+    avatarUploading = true;
+    avatarError = null;
+    try {
+      const presignRes = await fetch('/v1/uploads/presign', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          kind: 'resident_avatar',
+          contentType: avatarFile.type,
+        }),
+      });
+      if (!presignRes.ok) {
+        const body = await presignRes.json().catch(() => ({}) as { error?: string });
+        throw new Error((body as { error?: string }).error ?? `presign_${presignRes.status}`);
+      }
+      const presign = (await presignRes.json()) as {
+        uploadUrl: string;
+        publicUrl: string;
+      };
+
+      const putRes = await fetch(presign.uploadUrl, {
+        method: 'PUT',
+        headers: { 'content-type': avatarFile.type },
+        body: avatarFile,
+      });
+      if (!putRes.ok) {
+        throw new Error(`upload failed (${putRes.status})`);
+      }
+      avatarUploadedUrl = presign.publicUrl;
+      return avatarUploadedUrl;
+    } catch (err) {
+      avatarError = err instanceof Error ? err.message : 'upload failed';
+      throw err;
+    } finally {
+      avatarUploading = false;
+    }
+  }
+
   async function commit() {
     if (!canSubmit) return;
     errorMsg = null;
     submitting = true;
     try {
+      let avatarUrl: string | null = null;
+      try {
+        avatarUrl = await uploadAvatarIfNeeded();
+      } catch {
+        submitting = false;
+        return;
+      }
       const goalsT = goals.trim();
       const alignmentT = alignment.trim();
       const quirksT = quirks.trim();
@@ -82,6 +172,7 @@
           ...(alignmentT ? { alignment: alignmentT } : {}),
           ...(quirksT ? { quirks: quirksT } : {}),
           ...(aestheticT ? { aesthetic: aestheticT } : {}),
+          ...(avatarUrl ? { avatarUrl } : {}),
         }),
       });
       if (!res.ok) {
@@ -144,7 +235,11 @@
         <SectionTag label="Preview · soul under glass" />
       </div>
       <div class="preview">
-        <SimpleStainedGlass size={120} {emotion} {monogram} seed={3} />
+        {#if avatarPreviewUrl}
+          <img class="preview__avatar" src={avatarPreviewUrl} alt="resident likeness preview" />
+        {:else}
+          <SimpleStainedGlass size={120} {emotion} {monogram} seed={3} />
+        {/if}
         <div class="preview__col">
           <div class="preview__tag">Soul under glass</div>
           <div class="preview__name">{name || 'unnamed'}</div>
@@ -161,6 +256,46 @@
             </span>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Likeness · profile picture -->
+    <section class="section">
+      <div class="tag-wrap tag-wrap--tight">
+        <SectionTag label="Likeness · optional" />
+      </div>
+      <div class="field">
+        <div class="label">Profile picture</div>
+        <div class="hint">
+          jpeg, png, or webp · under 10 MB. omit to keep the stained-glass monogram.
+        </div>
+        <div class="avatar-row">
+          {#if avatarPreviewUrl}
+            <img class="avatar-thumb" src={avatarPreviewUrl} alt="chosen likeness" />
+          {:else}
+            <span class="avatar-thumb avatar-thumb--empty">·</span>
+          {/if}
+          <div class="avatar-controls">
+            <label class="avatar-btn">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onchange={onAvatarChange}
+                class="avatar-input"
+              />
+              {avatarPreviewUrl ? 'Replace' : 'Choose image'}
+            </label>
+            {#if avatarPreviewUrl}
+              <button type="button" class="avatar-clear" onclick={clearAvatar}>Remove</button>
+            {/if}
+          </div>
+        </div>
+        {#if avatarUploading}
+          <div class="avatar-status">uploading…</div>
+        {/if}
+        {#if avatarError}
+          <div class="avatar-status avatar-status--error">{avatarError}</div>
+        {/if}
       </div>
     </section>
 
@@ -447,7 +582,80 @@
     gap: 16px;
     align-items: flex-start;
   }
+  .preview__avatar {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 1px solid var(--ground-3);
+    flex-shrink: 0;
+  }
   .preview__col { min-width: 0; flex: 1; }
+
+  .avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .avatar-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border: 1px solid var(--ground-3);
+    background: var(--ground-1);
+    flex-shrink: 0;
+  }
+  .avatar-thumb--empty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    font-family: var(--mono);
+    font-size: 18px;
+  }
+  .avatar-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .avatar-btn {
+    position: relative;
+    display: inline-block;
+    padding: 8px 14px;
+    background: var(--ground-1);
+    border: 1px solid var(--ground-3);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--text-1);
+    cursor: pointer;
+  }
+  .avatar-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .avatar-clear {
+    background: transparent;
+    border: 1px solid var(--ground-3);
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .avatar-status {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .avatar-status--error { color: var(--s-rose); }
   .preview__tag {
     font-family: var(--mono);
     font-size: 8.5px;

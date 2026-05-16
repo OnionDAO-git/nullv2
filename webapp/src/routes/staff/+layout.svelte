@@ -1,18 +1,27 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { afterNavigate } from '$app/navigation';
+  import Hamburger from '$lib/components/Hamburger.svelte';
+  import SideMenu from '$lib/components/SideMenu.svelte';
+  import { menuOpen, closeMenu } from '$lib/stores/nav';
 
   let { data, children } = $props();
 
   const navItems = [
     { href: '/staff', label: 'Workshops' },
     { href: '/staff/print-jobs', label: 'Print Queue' },
+    { href: '/staff/residents', label: 'Residents' },
   ];
 
   let current = $derived(page.url.pathname);
+  let nav = $derived(page.data?.nav);
+
+  afterNavigate(() => closeMenu());
 </script>
 
 <header class="nav">
   <div class="nav__left">
+    <Hamburger />
     <a href="/staff" class="wordmark">Null City</a>
     <span class="badge">Staff</span>
     <nav class="links">
@@ -28,6 +37,16 @@
 </header>
 
 {@render children?.()}
+
+{#if $menuOpen}
+  <SideMenu
+    active={null}
+    shardBalance={nav?.shardBalance ?? 0}
+    visitorHandle={nav?.visitorHandle ?? data.visitor.user.name ?? 'staff'}
+    unreadCount={nav?.unreadCount ?? 0}
+    standings={nav?.standings ?? []}
+  />
+{/if}
 
 <style>
   .nav {
@@ -48,6 +67,10 @@
     display: flex;
     align-items: center;
     height: 100%;
+  }
+
+  .nav__left :global(.hamburger) {
+    margin-left: 8px;
   }
 
   .wordmark {

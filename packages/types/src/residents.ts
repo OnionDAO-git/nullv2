@@ -9,8 +9,9 @@
 export const RESIDENT_STATUS_IDS = ['alive', 'dead'] as const;
 export type ResidentStatus = (typeof RESIDENT_STATUS_IDS)[number];
 
-/** Why a resident died. Priority order: lifespan checked before attention. */
-export const DEATH_CAUSE_IDS = ['lifespan', 'attention'] as const;
+/** Why a resident died. Priority order in the tick worker: lifespan checked
+ *  before attention. 'admin' is set only by an admin-induced early death. */
+export const DEATH_CAUSE_IDS = ['lifespan', 'attention', 'admin'] as const;
 export type DeathCause = (typeof DEATH_CAUSE_IDS)[number];
 
 export function isResidentStatus(value: string): value is ResidentStatus {

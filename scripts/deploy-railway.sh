@@ -88,6 +88,10 @@ prompt_value() {
 
 echo "▶ collecting config (pre-set as env vars to skip prompts)"
 prompt_value  POSTGRES_SERVICE     "landing-2026's Postgres service name" "Postgres"
+# Service where landing-2026 stores the S3_* MinIO credentials — typically its
+# SvelteKit webapp service. Used to mirror S3 vars onto nullv2's api so resident
+# avatars land in the same bucket. Set to empty/'-' to skip (avatars will fail).
+prompt_value  LANDING_S3_SOURCE_SERVICE "landing-2026 service that owns S3_* vars" "landing-2026"
 prompt_optional_secret INFERENCE_API_KEY "INFERENCE_API_KEY"
 prompt_value  INFERENCE_BASE_URL   "INFERENCE_BASE_URL" "https://api.openai.com/v1"
 prompt_value  INFERENCE_MODEL      "INFERENCE_MODEL"    "gpt-4o-mini"
@@ -137,6 +141,29 @@ fi
 if railway status 2>/dev/null | grep -qi '^Environment:[[:space:]]*None'; then
   echo "▶ no environment selected — picking one now:"
   railway environment
+fi
+
+# Probe whether landing-2026's S3-owning service exists in this env. If it
+# doesn't, we won't try to wire reference variables for it (the api will
+# still deploy; avatar uploads will just fail at runtime with a clear error).
+S3_REFS_AVAILABLE=0
+if [ -n "${LANDING_S3_SOURCE_SERVICE:-}" ] && [ "$LANDING_S3_SOURCE_SERVICE" != "-" ]; then
+  if railway variables --service "$LANDING_S3_SOURCE_SERVICE" >/dev/null 2>&1; then
+    S3_REFS_AVAILABLE=1
+    echo "  ✓ will mirror S3_* from '$LANDING_S3_SOURCE_SERVICE'"
+  else
+    cat >&2 <<EOF
+⚠  Couldn't find a service named '$LANDING_S3_SOURCE_SERVICE' in this project.
+   Resident avatar uploads need S3_ENDPOINT / S3_BUCKET / S3_ACCESS_KEY_ID /
+   S3_SECRET_ACCESS_KEY on the api service. We will skip wiring them.
+   Set them manually later with:
+     railway variables --service api --set 'S3_ENDPOINT=…' --set 'S3_BUCKET=…' …
+   Or re-run with the correct service name:
+     LANDING_S3_SOURCE_SERVICE='<exact-name>' ./scripts/deploy-railway.sh
+EOF
+  fi
+else
+  echo "  · skipping S3_* mirroring (LANDING_S3_SOURCE_SERVICE unset)"
 fi
 
 # Confirm the named Postgres service is actually visible in this env.
@@ -195,16 +222,29 @@ set_vars() {
   railway variables --service "$service" "$@" >/dev/null
 }
 
-set_vars api \
-  --set "RAILWAY_DOCKERFILE_PATH=services/api/Dockerfile" \
-  --set "DATABASE_URL=$DB_URL_REF" \
-  --set "DATABASE_PUBLIC_URL=$DB_PUBLIC_URL_REF" \
-  --set "AUTH_DATABASE_URL=$DB_URL_REF" \
-  --set "AUTH_COOKIE_NAME=session" \
-  --set "AUTH_COOKIE_DOMAIN=$COOKIE_DOMAIN" \
-  --set "API_PORT=3100" \
-  --set "PORT=3100" \
+api_vars=(
+  --set "RAILWAY_DOCKERFILE_PATH=services/api/Dockerfile"
+  --set "DATABASE_URL=$DB_URL_REF"
+  --set "DATABASE_PUBLIC_URL=$DB_PUBLIC_URL_REF"
+  --set "AUTH_DATABASE_URL=$DB_URL_REF"
+  --set "AUTH_COOKIE_NAME=session"
+  --set "AUTH_COOKIE_DOMAIN=$COOKIE_DOMAIN"
+  --set "API_PORT=3100"
+  --set "PORT=3100"
   --set "INFERENCE_URL=$INFERENCE_INTERNAL_URL"
+)
+# Mirror S3_* from landing-2026 via Railway reference variables. Railway
+# resolves these at deploy time, so rotating a key on the source service
+# auto-propagates here on the next redeploy.
+if [ "$S3_REFS_AVAILABLE" = "1" ]; then
+  api_vars+=(
+    --set "S3_ENDPOINT=\${{${LANDING_S3_SOURCE_SERVICE}.S3_ENDPOINT}}"
+    --set "S3_BUCKET=\${{${LANDING_S3_SOURCE_SERVICE}.S3_BUCKET}}"
+    --set "S3_ACCESS_KEY_ID=\${{${LANDING_S3_SOURCE_SERVICE}.S3_ACCESS_KEY_ID}}"
+    --set "S3_SECRET_ACCESS_KEY=\${{${LANDING_S3_SOURCE_SERVICE}.S3_SECRET_ACCESS_KEY}}"
+  )
+fi
+set_vars api "${api_vars[@]}"
 
 set_vars tick \
   --set "RAILWAY_DOCKERFILE_PATH=services/tick/Dockerfile" \
