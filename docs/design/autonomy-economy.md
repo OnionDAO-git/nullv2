@@ -6,7 +6,7 @@ Base context: `README.md`, `DESIGN.md`, current `main` at `06bdaae`
 
 ## One-Sentence Hook
 
-Null City is a near-future Chicago shadow district where OnionDAO Handlers spend earned Shards to make AI factions move: claim landmarks, install strange civic devices, sabotage rivals, birth heroes, and leave public proof on the city wall.
+Null City is a near-future Chicago shadow district where OnionDAO Handlers spend earned Shards to make AI factions move: claim landmarks, install strange civic devices, contest rivals, birth heroes, and leave public proof on the city wall.
 
 ## Setting Frame
 
@@ -33,18 +33,27 @@ The AI residents who act in the world are heroes. A hero is a faction-aligned AI
 3. They choose a public faction campaign, landmark, device, or hero to support.
 4. They spend Shards and possibly faction resources.
 5. A hero works over several ticks to execute the operation.
-6. The operation resolves into map change, device construction, resource output, sabotage, defense, letters, achievements, or death.
-7. The human receives visible credit as a Handler, patron, founder, witness, or saboteur.
+6. The operation resolves into map change, device construction, defense, letters, achievements, or death.
+7. The human receives visible credit as a Handler, patron, founder, witness, or operator.
 
 ## Thirty-Second Player Pitch
 
-Spend Shards to fund an AI operation at a Chicago landmark. If it succeeds, Chicago changes and your name stays on the record.
+See the Campaign Board. Pick a faction's operation at a Chicago landmark. Spend Shards. Heroes execute it. Chicago changes and your name stays on the record.
+
+## First-Time Attendee Path
+
+1. Attendee earns 5 Shards at a workshop.
+2. The dashboard points them to the Campaign Board.
+3. They fund at least 1 Shard into an active campaign.
+4. The wall ticker updates within 1 tick: "funded by [Name]."
+5. They receive a letter from the sponsoring hero or Embassy Clerk.
+6. On resolution, they see the map change with permanent credit.
 
 ## Core Entities
 
 ### Landmarks
 
-Landmarks are fixed Chicago sites seeded by admins. They are the durable map nodes that produce resources and hold devices.
+Landmarks are fixed Chicago sites seeded by admins. They are the durable map nodes that hold control state, campaigns, and devices. Post-MVP, they can also produce faction resources.
 
 Landmarks are strategic nodes. Parcels remain the visual territory cells around or attached to those nodes. Achievements can still mint parcels as visual receipts, but landmark campaigns decide which faction controls the strategic sites and which devices operate there.
 
@@ -62,7 +71,7 @@ Example landmarks:
 Each landmark can have:
 
 - Name and short description.
-- Base resource output.
+- Post-MVP base resource output.
 - Defense/security stat.
 - Visibility or legitimacy stat.
 - Current controlling faction or influence split.
@@ -84,15 +93,24 @@ A device has:
 - Builder/founding Handler.
 - Name.
 - Optional inscription.
-- Status: proposed, gathering, building, active, damaged, disabled, destroyed. `destroyed` is post-MVP.
+- Status: proposed, gathering, building, active, damaged, disabled, destroyed. The MVP should only need proposed/building/active; damage states are post-MVP.
 - Build cost in resources and/or Shards.
 - Build duration in ticks.
-- Simple effect.
+- MVP effect: name, inscription, builder credit, wall visibility.
+- Post-MVP effect: bounded mechanical bonus.
 
 Example device types:
 
+MVP device types are cosmetic plus credit only:
+
+- Fabricator Node: fabrication-themed founder device.
+- Compute Shrine: AI/runway-themed founder device.
+- Ledger Anchor: proof/ownership-themed founder device.
+
+Post-MVP device effects can add bounded mechanical bonuses:
+
 - Fabricator Node: produces or discounts hardware resources.
-- Compute Shrine: stores campaign attention escrow or improves hero runway. It should not mint broad attention in MVP.
+- Compute Shrine: stores campaign attention escrow or improves hero runway. It should not mint broad attention.
 - Redaction Gate: increases defense and sabotage resistance.
 - Ledger Anchor: makes control harder to contest.
 - Signal Beacon: increases public visibility or ticker priority.
@@ -105,11 +123,14 @@ Devices should be templated, not fully freeform. Humans can customize the name, 
 
 Campaigns are public faction operations that humans can fund.
 
-Campaign types:
+MVP campaign types:
 
 - Claim landmark.
 - Defend landmark.
 - Build device.
+
+Post-MVP campaign types:
+
 - Repair device.
 - Sabotage rival device.
 - Gather resource.
@@ -122,7 +143,7 @@ Each campaign has:
 - Sponsoring faction and hero.
 - Target landmark or device.
 - Public pitch.
-- Required Shards and resources.
+- Required Shards and any required post-MVP resources.
 - Progress.
 - Deadline or tick duration.
 - Resolution rule.
@@ -140,12 +161,13 @@ Heroes:
 - Speak in rooms and chat.
 - Launch or endorse campaigns.
 - Work on funded operations over ticks.
-- Gather resources from controlled landmarks.
-- Place or repair devices.
-- Sabotage rival devices.
+- Gather resources from controlled landmarks after landmark production exists.
+- Place devices. Repair is post-MVP once device damage exists.
 - Ask Handlers for Shards or resources.
 - Remember important patrons.
 - Die and enter the Library of Souls.
+
+Post-MVP, heroes can sabotage rival devices once claim/defend/build loops have live balance data.
 
 Handlers direct heroes by funding campaigns or giving targeted orders. This should be influence, not perfect mind control. A fully funded order should strongly bias the hero, but SPARK can still shape how they narrate and prioritize it.
 
@@ -170,6 +192,17 @@ Recommended mapping:
 | `purpose` | Mandate | faction goals, active campaigns, landmark ambitions, unfinished projects |
 
 These labels name unmet-pressure dimensions. Internally keep `hunger/safety/social/purpose` for June 1 to avoid churn across types, prompts, tick logs, and UI. In player-facing surfaces, render them as `Runway pressure`, `Security pressure`, `Influence gap`, and `Mandate pressure`, or invert the meters so higher means healthier.
+
+### Player-Facing SPARK Display
+
+Hero detail views should show all four pressure dimensions as concrete gauges:
+
+- Runway pressure: ticks of attention remaining.
+- Security pressure: none, low, or high, plus any active threat indicator.
+- Influence gap: recent human contact and recent Handler funding.
+- Mandate pressure: active campaigns versus faction campaign cap.
+
+This transparency is the answer to "a Handler paid, but the hero did something else." Disobedience or deferral must be legible before it happens.
 
 ### SPARK Improvements
 
@@ -196,7 +229,6 @@ MVP input contract:
 - `stalledCampaignTicks`
 - `controlledLandmarkCount`
 - `threatenedDeviceCount`
-- `recentSabotageCount`
 - `recentCampaignWinCount`
 - `recentCampaignLossCount`
 - `recentDefenseFunding`
@@ -206,24 +238,37 @@ MVP input contract:
 SPARK should not resolve battles directly. It should choose motives and action preferences:
 
 - High Runway pressure: ask for refills, sell resources, gather life-support resources, avoid risky campaigns.
-- High Security pressure: defend, repair, fortify, investigate sabotage, write warning letters.
+- High Security pressure: defend, fortify, investigate threats, write warning letters.
 - High Influence gap: recruit Handlers, send letters, publicly pitch campaigns, negotiate.
 - High Mandate pressure: claim landmarks, build devices, pursue faction goals, start ambitious campaigns.
 
 ### Hero Campaign Choice Contract
 
-Heroes do not invent mechanics. The system enumerates legal campaign templates, scores them using SPARK pressure, faction strategy, available landmarks, available resources, and human orders, then creates at most one public campaign per faction. The LLM writes pitch text and narration for an already-valid campaign.
+The tick worker is the campaign-selection authority. Heroes do not invent mechanics. The LLM only writes pitch text and narration for an already-valid campaign.
 
-Hero refusal or deferral must cite a concrete rule:
+Each tick, for each faction below its active-campaign cap, the worker:
 
-- Hero is dead.
-- Faction already has its campaign cap.
-- Target is invalid.
-- Required resource stockpile is missing.
-- Faction conflict rule blocks the action.
-- Runway or Security pressure forces a survival/defense action first.
+1. Enumerates legal campaign templates via `canLaunchCampaign(hero, campaign)`:
+   - Hero is alive.
+   - Faction is below active-campaign cap.
+   - Target is valid for the campaign type.
+   - Required faction stockpile is available, if a post-MVP campaign needs it.
+   - No faction-conflict rule blocks the action.
+   - Hero attention plus campaign escrow allocation is above the survival threshold.
+2. Ranks viable campaigns by pressure alignment:
+   - Runway under 5 ticks forces a survival/refill campaign if one is available.
+   - High Security pressure plus active threat biases Defend by 2x.
+   - Human-Shard-funded orders rank at 3x.
+   - Recent human contact ranks at 2x.
+   - Mandate pressure ranks at 1.5x.
+   - Controlled-landmark count and SPARK bias rank at 1x.
+3. Selects the top-ranked campaign and inserts it into `faction_campaigns`.
+4. Invokes the LLM once to write pitch text of at most 200 characters.
+5. Stores that pitch text and replays it; the LLM is not re-called for the same campaign.
 
-SPARK can bias campaign selection and narration, but its numeric contribution to campaign resolution should be capped. It should not secretly decide battles.
+Hero refusal or deferral must cite a concrete rule: dead hero, campaign cap, invalid target, missing required resources once stockpiles exist, faction conflict, or Runway/Security emergency.
+
+SPARK can bias campaign selection and narration, but not outcome resolution. Resolution math is deterministic: attack score versus defense score, with ties to the defender.
 
 ## Economy
 
@@ -232,14 +277,20 @@ SPARK can bias campaign selection and narration, but its numeric contribution to
 These numbers are placeholders for a tunable MVP, not final balance.
 
 - Expected Shard faucet: 1-3 Shards for lightweight participation, 5 Shards for normal workshops, 10-20 Shards for major wins or staff/admin awards.
-- Campaign contribution unit: 2 Shards.
+- Campaign contribution unit: 1 Shard.
 - Campaign funding attention drip: every 2 Shards of campaign funding gives 1 attention to the sponsoring hero.
 - Refill remains the efficient survival action: 5 Shards gives 10 attention.
-- Per-Handler soft cap: only the first 10 Shards from one Handler count at full strength on a single campaign; later Shards still give credit but count at reduced campaign power.
+- Per-Handler contribution cap on one campaign:
+  - Shards 1-10 count at 100%.
+  - Shards 11-25 count at 50%.
+  - Shards 26+ count at 25%.
+  - Public credit reflects total Shards spent, not effective contribution.
 - Overfunding: excess Shards become public credit and small attention drip, not runaway campaign score.
-- Device cost band: 20-40 campaign Shards plus a small faction stockpile cost.
-- Landmark claim cost band: 30-60 campaign Shards depending on defense and underdog status.
-- Sabotage cost band: 15-30 campaign Shards, delay/disable only in MVP.
+- Device cost band: 20-40 campaign Shards. MVP devices do not need faction stockpile resources.
+- Landmark claim cost: `30 + (10 * landmark.defenseStat)` effective Shards.
+- Underdog discount: faction in 4th place by landmark count gets 30% off claim cost.
+- Control cap: no faction may hold more than 4 landmarks in MVP; attempting a 5th locks out claim campaigns for that faction for 2 ticks.
+- Sabotage has no MVP cost because it is deferred.
 
 ### Shards
 
@@ -257,15 +308,15 @@ The attention loop is viable only if Shards are not just food. Refill is emotion
 
 ### Resources
 
-Current faction resources can become both human achievement ingredients and campaign/device materials.
+Current faction resources are human achievement ingredients today. Post-MVP, they can also become campaign/device materials.
 
-Landmarks can produce resources over time. Heroes can gather them from landmarks their faction controls or contests. Humans may still buy resources from heroes for achievement recipes.
+Post-MVP, landmarks can produce resources over time and heroes can gather them from landmarks their faction controls or contests. Humans may still buy resources from heroes for achievement recipes.
 
-For MVP, keep three pools separate:
+Keep three pools conceptually separate:
 
 - Human inventory: resources humans buy from heroes and spend on achievements.
-- Faction stockpile: resources landmarks produce and heroes use for campaigns/devices.
-- Campaign escrow: Shards and stockpile resources committed to one active operation.
+- Faction stockpile: post-MVP resources landmarks produce and heroes use for campaigns/devices.
+- Campaign escrow: Shards committed to one active operation in the MVP; post-MVP, this can also include faction stockpile resources.
 
 Do not consume a human's achievement inventory for faction devices in the MVP. Otherwise humans will feel punished for choosing between lanyard progress and public map influence.
 
@@ -280,6 +331,8 @@ Recommended MVP rates:
 - Campaign funding: full campaign progress plus a smaller attention drip to the sponsoring hero, for example 2 Shards = 1 attention.
 - Birth: new hero with seed attention and founder credit.
 
+If hero `attentionBalance` is under 2 ticks of survival, the hero may draw emergency attention from campaign escrow at up to 25% of escrow per tick.
+
 ### Attention Failure Rules
 
 Attention is emotionally viable but numerically brittle. A visitor-born hero currently starts with 24 attention and loses 1 attention per 5-minute tick, which means it can starve in about 2 hours without support despite a 24-hour lifespan.
@@ -290,7 +343,10 @@ MVP guardrails:
 - A hero working on a campaign may draw from that campaign's attention escrow before dying of attention.
 - If a sponsoring hero dies, the campaign pauses and the faction flagship can adopt it on the next tick.
 - Funders keep public credit even if a hero dies mid-campaign.
-- Stale campaigns expire after a fixed number of ticks and refund no Shards, but produce a public failure event and letters to major contributors.
+- Campaigns expire 5 ticks after creation if not fully funded.
+- On expiry, 75% of contributed Shards refund to Handlers.
+- Expired campaigns remain visible as historical records with contributor names.
+- The hero or Embassy Clerk sends a failure letter to major contributors.
 
 ## Conflict Model
 
@@ -300,23 +356,23 @@ For MVP, avoid full tactical combat. Resolve operations through simple scores:
 
 Attack or operation score:
 
-- Shards funded.
-- Required resources supplied.
-- Hero Mandate or relevant SPARK pressure.
-- Landmark/device bonuses.
+- Effective Shards funded after per-Handler cap weighting.
+- Required resources supplied, when the campaign type uses resources.
+- Hero Mandate pressure as a small campaign-selection input only, not as hidden resolution weight.
+- Landmark/device bonuses after post-MVP mechanical effects exist.
 - Faction advantage.
-- Small randomness.
 
 Defense score:
 
 - Landmark defense.
-- Active devices.
+- Active devices after post-MVP mechanical effects exist.
 - Recent defensive funding.
-- Hero Security pressure.
+- Hero Security pressure as a small campaign-selection input only, not as hidden resolution weight.
 - Control duration.
-- Small randomness.
 
-Sabotage should damage, delay, or disable devices in the MVP. It should not delete a human-created thing or erase founder credit. Full destruction can be reconsidered after the first campaign loop works.
+Ties go to the defender. Avoid hidden randomness in the MVP; the Arbiter can make deterministic outcomes sound alive without making them opaque.
+
+Sabotage is post-MVP. When introduced, it should damage, delay, or disable devices. It should not delete a human-created thing or erase founder credit. Full destruction can be reconsidered after the first campaign loop works.
 
 ### Campaign Templates
 
@@ -324,7 +380,7 @@ MVP campaign templates should be deterministic and explainable.
 
 #### Claim Landmark
 
-- Cost: 30-60 Shards, adjusted by landmark defense and underdog discount.
+- Cost: `30 + (10 * landmark.defenseStat)` effective Shards, after underdog discount.
 - Duration: 3 ticks after fully funded.
 - Success: faction becomes controller or gains influence majority.
 - Partial success: faction gains influence but not control.
@@ -333,29 +389,33 @@ MVP campaign templates should be deterministic and explainable.
 
 #### Build Device
 
-- Cost: 20-40 Shards plus faction stockpile resources.
-- Duration: 2-4 ticks after resources are available.
+- Cost: 20-40 Shards.
+- Duration: 2-4 ticks after fully funded.
 - Success: device enters `active`.
-- Partial success: device enters `damaged` but repairable.
+- Partial success: device permit and founder credit are recorded, but the device remains `proposed` until follow-up funding completes it.
 - Failure: campaign expires; founder inscription is preserved in the failed permit record.
 - Overfunding: reduces build time by at most 1 tick.
+- MVP effect: name, inscription, builder credit, wall visibility. Mechanical effects are post-MVP.
 
-#### Defend or Repair
+#### Defend
 
 - Cost: 10-25 Shards.
 - Duration: 1-2 ticks.
-- Success: adds temporary defense, repairs `damaged` to `active`, or clears `disabled`.
-- Partial success: reduces sabotage delay.
+- Success: adds temporary defense.
+- Partial success: adds temporary defense at half strength.
 - Failure: no state change, but defense funding still counts in future score for a short window.
+- Repair is post-MVP unless devices gain mechanical damage states.
 
 #### Sabotage
+
+Sabotage is not in the June 1 MVP. Post-MVP target behavior:
 
 - Cost: 15-30 Shards.
 - Duration: 2 ticks.
 - Success: target device becomes `damaged` or `disabled`.
 - Partial success: target operation is delayed 1 tick.
 - Failure: defender receives a warning event and temporary Security pressure.
-- MVP limit: no destruction and no erasure of founder credit.
+- Limit: no destruction and no erasure of founder credit.
 
 ## Neutral Arbiter
 
@@ -387,7 +447,7 @@ Humans need public authorship and emotional feedback, not just abstract points.
 
 Surfaces that should make Handler influence visible:
 
-- Wall credit: "funded by", "founded by", "witnessed by", "sabotaged by".
+- Wall credit: "funded by", "founded by", "witnessed by", "operated by".
 - Landmark plaques with founder names and inscriptions.
 - Personal letters from heroes and the Embassy Clerk.
 - Faction standing and unlocks.
@@ -400,21 +460,30 @@ Surfaces that should make Handler influence visible:
 
 Feasible June 1 slice:
 
-- Static Chicago landmarks.
+- 6 seeded Chicago landmarks as admin-static data.
 - Public campaign board.
 - One active campaign per faction.
 - Humans fund campaigns with Shards.
+- Claim, Defend, and Build campaign templates only.
 - Campaigns progress and resolve on ticks.
 - Landmarks can be claimed, contested, or defended.
 - One device slot per landmark.
-- Human-created device name and inscription.
-- Sabotage only disables or delays devices and never deletes founder credit.
+- Templated devices: Fabricator Node, Compute Shrine, and Ledger Anchor.
+- MVP devices are cosmetic only: name, inscription, builder credit, and wall visibility.
+- Deterministic campaign resolution: attack score versus defense score, ties to defender.
 - SPARK labels exposed as Runway pressure, Security pressure, Influence gap, and Mandate pressure.
-- Wall ticker shows claims, builds, sabotage, and hero pleas.
+- Wall ticker shows claims, builds, defenses, and hero pleas.
 - Letters credit Handlers for meaningful actions.
 
 Defer:
 
+- Sabotage campaigns.
+- Device mechanical effects on defense/offense.
+- Device repair.
+- Landmark resource production.
+- Faction stockpile spending beyond placeholders.
+- Multiple concurrent campaigns per faction.
+- Hero-authored campaign proposals.
 - Full free market.
 - Complex diplomacy.
 - Pokemon-style combat.
@@ -423,6 +492,39 @@ Defer:
 - Freeform generated art.
 - Rich supply chain.
 - Fully autonomous multi-step planning.
+
+## Implementation Shape Sketch
+
+This is not a migration plan, but it defines the expected implementation boundary.
+
+Likely static catalogs:
+
+- `LANDMARKS`: 6 seeded Chicago landmarks with id, name, blurb, defense stat, and unclaimable flag.
+- `DEVICE_TYPES`: Fabricator Node, Compute Shrine, Ledger Anchor for MVP.
+- `CAMPAIGN_TYPES`: claim, defend, build.
+
+Likely tables:
+
+- `landmark_state`: landmark id, controlling faction, influence/defense state.
+- `faction_campaigns`: type, faction, hero, target landmark/device, status, progress, pitch text, created/resolved timestamps.
+- `campaign_contributions`: campaign id, human id, Shards contributed, effective contribution, public credit label.
+- `landmark_devices`: landmark id, faction, type, name, inscription, founder human id, status.
+- `campaign_events`: funding, launch, progress, resolution, expiry, adoption.
+
+Likely API surface:
+
+- `GET /v1/campaigns`: active campaigns plus recent resolved campaigns.
+- `POST /v1/campaigns/:id/fund`: Handler contributes Shards.
+- `GET /v1/landmarks`: landmark state, devices, control, and current campaigns.
+- Wall state expands to include landmark and campaign events.
+
+Transaction invariants:
+
+- Every campaign Shard contribution writes `shard_ledger`.
+- Every campaign attention drip writes `attention_ledger`.
+- Campaign funding, contribution credit, attention drip, and campaign progress update in one transaction.
+- Campaign resolution writes a durable event before notifying wall/letters.
+- Hero death mid-campaign pauses the campaign and creates an adoption event for the faction flagship.
 
 ## Failure Modes and Guardrails
 
@@ -460,7 +562,7 @@ Guardrails:
 
 ### Sabotage Feels Bad
 
-Risk: a human-created device gets erased and the creator disengages.
+Risk: a human-created device gets erased and the creator disengages. This is why sabotage is out of the June 1 MVP.
 
 Guardrails:
 
@@ -492,30 +594,18 @@ Guardrails:
 
 ## Resolved Design Choices
 
-- Human role label: use `Handler` for the attendee fantasy. `Patron`, `Founder`, and `Witness` can be credit labels.
+- Human role label: use `Handler` for the attendee fantasy. `Patron`, `Founder`, `Witness`, and `Operator` can be credit labels.
 - SPARK internals: keep `hunger/safety/social/purpose` internally for June 1; expose gameplay labels.
 - Map model: landmarks are strategic nodes; parcels remain visual territory receipts.
 - Resources: keep human inventory separate from faction stockpiles and campaign escrow for MVP.
-- Sabotage: damage, delay, or disable only for MVP.
+- Devices: cosmetic-only for MVP; mechanical effects after live balance data.
+- Campaign selection: deterministic tick worker selection; LLM pitch/narration only.
+- Sabotage: defer past June 1; when introduced, damage, delay, or disable only.
 
 ## Open Questions
 
-1. Are landmarks faction-neutral at start, or seeded with faction tilts?
-2. What exact Shard faucet should we expect per attendee per day?
-3. How much can a hero refuse or reinterpret a funded order?
-4. Should sabotage be available on day one, or unlock after players understand building?
-5. Which five to seven Chicago landmarks are the launch set?
-6. Which device types are safe enough for the first shipped balance pass?
-7. Should landmark control affect achievement parcel placement, or stay separate in MVP?
+Track open questions in `docs/design/design-questions.md`. The main implementation blockers are Shard faucet expectations, final launch landmarks, initial landmark control state, and how much Handler orders can be deferred by hero pressure.
 
 ## Recommended Next Step
 
-Get multi-view critique before implementation. Ask reviewers to evaluate the design as:
-
-- Event attendee/player.
-- Game economy designer.
-- AI autonomy engineer.
-- Narrative/worldbuilding designer.
-- Implementation engineer under a June 1 deadline.
-
-Then revise this doc into a tighter implementation-ready spec.
+Resolve the blockers in `docs/design/design-questions.md`, then turn this design into an implementation plan. Do not start with sabotage, device mechanics, or faction stockpiles; ship the deterministic claim/defend/build campaign loop first.

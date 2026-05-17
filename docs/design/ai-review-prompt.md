@@ -22,6 +22,8 @@ Read these files first:
 2. `DESIGN.md`
 3. `AGENTS.md`
 4. `docs/design/autonomy-economy.md`
+5. `docs/design/design-notes.md`
+6. `docs/design/design-questions.md`
 
 For current implementation details, inspect:
 

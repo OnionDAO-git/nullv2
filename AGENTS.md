@@ -12,6 +12,8 @@ Current active design work:
 
 - `docs/design/autonomy-economy.md` - near-future Chicago autonomy, faction campaigns,
   landmarks, devices, SPARK gameplay labels, and human Handler loop.
+- `docs/design/design-notes.md` - review synthesis, rationale, and deferred ideas.
+- `docs/design/design-questions.md` - open human/product questions before implementation.
 - `docs/design/ai-review-prompt.md` - prompt for external AI reviewers.
 
 Do not commit secrets, personal API keys, local session tokens, or private source material.
