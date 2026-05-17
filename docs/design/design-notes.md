@@ -103,6 +103,35 @@ Current SPARK should be extended before it drives campaigns:
 - Track active threats separately from generic room deaths.
 - Track patron count and recent funding.
 
+## Notes On Simulation Tempo
+
+The city is a background experience. Humans will be in workshops, talking, coding, eating, commuting, and sleeping. The design should create periodic drama without requiring constant attention.
+
+Key distinction:
+
+- Scheduler tick = implementation heartbeat.
+- Campaign duration = wall-clock time humans understand.
+- City Broadcast refresh = display cadence.
+- Agent planning cadence = expensive inference cadence.
+
+Recommended default:
+
+- Configurable scheduler tick: 1, 5, or 10 minutes.
+- Launch default: 5 minutes.
+- Monitor refresh: 15-60 seconds.
+- Agent planning: only eligible active agents, every 10-30 minutes or after major events.
+- Campaigns store timestamps for funding/work/resolution rather than relying on hard-coded tick counts.
+
+Night mode matters. The world should not punish humans for sleeping:
+
+- Quiet hours pause or slow campaign deadlines and work timers.
+- Major control flips, expiries, and deaths should not happen overnight unless admins allow it.
+- Attention decay should pause or slow for visitor-born heroes.
+- Agents can produce reflections or morning-brief events.
+- Morning recap should restart the drama.
+
+Campaigns are the primary focus mechanism for agents. Avoid every agent independently deciding every tick. Assign lead/support slots deterministically, and let LLM output explain the assignment after the system chooses.
+
 ## Notes On Attention
 
 The attention loop is emotionally useful but dangerous. Refill should feel like mercy, not a tax. Campaign funding must provide some attention support so a Handler can push a hero toward action without guaranteeing the hero starves faster than a hero who merely receives refills.
@@ -111,7 +140,7 @@ Current working rule:
 
 - Refill remains efficient: 5 Shards gives 10 attention.
 - Campaign funding gives progress plus attention drip: 2 Shards gives 1 attention.
-- If a hero falls below 2 ticks of survival, the hero may draw emergency attention from campaign escrow.
+- If a hero falls below the configured active-hours survival threshold, the hero may draw emergency attention from campaign escrow.
 
 This is still a tuning assumption, not proven balance.
 
@@ -206,7 +235,7 @@ Good framing:
 The monitor should create small cliffhangers:
 
 - A landmark is 80% claimed but unfunded before the deadline.
-- A hero can hold a landmark if funded before the next tick.
+- A hero can hold a landmark if funded before the defense window closes.
 - An underdog faction has a discount or comeback opening.
 - A device will carry a founder's inscription if completed.
 - A campaign is about to expire and refund.
@@ -254,3 +283,5 @@ The right sequence is: make claim/defend/build fun and legible, then add pressur
 - Add explicit standing/ability unlock rules before coding campaign funding UX.
 - Decide whether Soul Foundry ships as full voting/ranking or as a curated birth-candidate list.
 - Cap active visitor-born heroes and make birth events visible in `/v1/wall/state`.
+- Store campaign timing as wall-clock timestamps and define quiet-hour pause semantics.
+- Keep agent inference bounded: eligible agents only, structured intents only, deterministic arbitration.

@@ -124,6 +124,35 @@ Default proposal: separate soul design from agent birth. Any human can submit a 
 
 Question: should Soul Foundry voting/ranking ship in MVP, or should MVP use a simpler curated list of human-created souls with designer/birther credit?
 
+### 18. Simulation Tempo
+
+Default proposal: use a configurable scheduler tick with 5 minutes as the launch default. Store campaign deadlines and build durations as wall-clock timestamps. Human contributions update immediately; agent/world consequences apply on scheduler cycles.
+
+Question: should launch default be 1, 5, or 10 minutes, and how fast should monitor drama update compared with world resolution?
+
+### 19. Quiet Hours
+
+Default proposal: configure America/Chicago quiet hours, for example 10 PM-9 AM. During quiet hours, campaign deadlines/work timers pause or slow, attention decay pauses or slows, and major control flips/deaths/expiries wait until morning unless admins override.
+
+Question: should quiet hours fully pause the game, slow it down, or allow funding while pausing only negative outcomes?
+
+### 20. Campaign Durations
+
+Default proposal:
+
+- Claim: 1-3 hour funding window, 30-90 minute work duration.
+- Defend: 30-90 minute funding window, 15-45 minute work duration.
+- Build device: 2-6 hour funding window, 2-8 hour work duration.
+- Birth: campaign/event gated, immediate public ceremony after unlocked.
+
+Question: are these durations right for a background coworking/event experience?
+
+### 21. Agent Campaign Assignment
+
+Default proposal: campaigns have one lead agent and optional capped support agents. The tick worker assigns lead/support deterministically based on faction, human funding, SPARK fit, vow/goals, location, workload, and flagship priority. Agents explain the decision but do not race or bid for ownership in MVP.
+
+Question: should campaign ownership be deterministic lead/support assignment, human-chosen lead agent, or a more autonomous agent competition later?
+
 ## Questions For Later Phases
 
 - When should device mechanical effects turn on?

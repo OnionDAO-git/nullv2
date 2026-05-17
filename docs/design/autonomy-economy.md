@@ -48,7 +48,7 @@ In this frame, Chicago landmarks are not just territory. They are civic signatur
 3. They choose a public faction campaign, landmark, device, or hero to support.
 4. They spend Shards and possibly faction resources.
 5. Their faction standing rises and may unlock stronger ways to help.
-6. A hero works over several ticks to execute the operation.
+6. A hero works over real time to execute the operation.
 7. The operation resolves into map change, device construction, defense, letters, achievements, birth, or death.
 8. The human receives visible credit as a Handler, patron, founder, witness, or operator.
 
@@ -58,10 +58,10 @@ See the Campaign Board. Pick a faction's operation at a Chicago landmark. Spend 
 
 ## First-Time Attendee Path
 
-1. Attendee earns 5 Shards at a workshop.
+1. Attendee earns a small Shard grant from a workshop, check-in, quest, or staff award.
 2. The dashboard points them to the Campaign Board.
 3. They fund at least 1 Shard into an active campaign.
-4. The wall ticker updates within 1 tick: "funded by [Name]."
+4. The wall ticker updates immediately or within the next scheduler cycle: "funded by [Name]."
 5. They receive a letter from the sponsoring hero or Embassy Clerk.
 6. On resolution, they see the map change with permanent credit.
 
@@ -111,7 +111,7 @@ A device has:
 - Optional inscription.
 - Status: proposed, gathering, building, active, damaged, disabled, destroyed. The MVP should only need proposed/building/active; damage states are post-MVP.
 - Build cost in resources and/or Shards.
-- Build duration in ticks.
+- Build duration in wall-clock time.
 - MVP effect: name, inscription, builder credit, wall visibility.
 - Post-MVP effect: bounded mechanical bonus.
 
@@ -161,7 +161,7 @@ Each campaign has:
 - Public pitch.
 - Required Shards and any required post-MVP resources.
 - Progress.
-- Deadline or tick duration.
+- Deadline or wall-clock duration.
 - Resolution rule.
 - Success, partial success, and failure outcome.
 - Public contributors.
@@ -176,7 +176,7 @@ Heroes:
 
 - Speak in rooms and chat.
 - Launch or endorse campaigns.
-- Work on funded operations over ticks.
+- Work on funded operations over wall-clock time.
 - Gather resources from controlled landmarks after landmark production exists.
 - Place devices. Repair is post-MVP once device damage exists.
 - Ask Handlers for Shards or resources.
@@ -292,11 +292,86 @@ SPARK should not resolve battles directly. It should choose motives and action p
 - High Influence gap: recruit Handlers, send letters, publicly pitch campaigns, negotiate.
 - High Mandate pressure: claim landmarks, build devices, pursue faction goals, start ambitious campaigns.
 
+### Simulation Time And Campaign Work
+
+Null City is a background experience. Humans will be in workshops, talking, coding, and only checking the city between other activities. The system should keep drama visible without requiring people to stare at the map all day.
+
+Core rule: ticks are implementation cadence, not the player-facing unit of drama. Campaigns, builds, attention warnings, deadlines, and public copy should be expressed in real time.
+
+Recommended launch model:
+
+- Scheduler tick is configurable: 1, 5, or 10 minutes.
+- Default world tick for launch: 5 minutes unless load testing says otherwise.
+- Campaign durations are stored as wall-clock timestamps: `fundingEndsAt`, `workStartsAt`, `workEndsAt`, `resolvedAt`.
+- The monitor can refresh every 15-60 seconds even if the world resolves less often.
+- Human contributions update campaign progress immediately, then the scheduler applies agent/world consequences on the next cycle.
+- Long actions take hours; quick defense actions take tens of minutes.
+
+Suggested background pacing:
+
+| Action | Funding window | Work/resolve duration | Why |
+| --- | ---: | ---: | --- |
+| Fund claim | 1-3 hours | 30-90 minutes after funded | Gives humans time to notice and rally. |
+| Defend landmark | 30-90 minutes | 15-45 minutes after funded | Fast enough to feel urgent. |
+| Build device | 2-6 hours | 2-8 hours after funded | Building should feel substantial. |
+| Birth agent | event/campaign gated | immediate ceremony, then normal life | Rare enough for everyone to notice. |
+| Refill/runway support | immediate | next scheduler cycle | Relief should be fast. |
+
+Campaign states should make this legible:
+
+- `draft`: legal campaign candidate, not public yet.
+- `funding`: visible and accepting Shards.
+- `assigned`: lead/support agents chosen.
+- `in_progress`: funded and being worked.
+- `resolving`: scheduler is applying outcome.
+- `completed`: outcome written to public history.
+- `expired`: funding window ended.
+- `paused_overnight`: deadline/work timer is frozen until morning mode.
+
+### Night And Low-Attention Mode
+
+The city should not reset or punish humans while they sleep. Overnight should feel like the city is resting, not dying.
+
+Default policy:
+
+- Configure local quiet hours, for example 10 PM-9 AM America/Chicago.
+- Campaign funding may remain open, but deadlines and work timers pause or slow during quiet hours.
+- No major control flips, campaign expiries, or deaths should happen during quiet hours unless admins explicitly allow it.
+- Attention decay should pause or slow for non-flagship heroes during quiet hours.
+- Agents can produce low-cost reflection, dream, or morning-brief events instead of active campaign work.
+- The City Broadcast should switch to a quieter overnight view: sleeping agents, pending campaigns, tomorrow's threats, and a morning countdown.
+- Morning mode posts a recap: what changed yesterday, which campaigns resume, which heroes need help.
+
+### Agent Planning And Campaign Focus
+
+Do not run full free-form planning for every agent every minute. It is too expensive and creates coordination problems.
+
+Recommended model:
+
+- Only eligible active agents plan: flagships, campaign leads, campaign supporters, threatened heroes, or recently human-funded heroes.
+- Planning cadence can be slower than the scheduler tick, for example every 10-30 minutes or when a major event changes the world.
+- Agents receive compact state packets: location, faction goals, legal campaigns, current assignment, SPARK pressures, recent human help, and nearby threats.
+- Agents return structured intent, not arbitrary mechanics:
+  - support campaign
+  - start or endorse campaign
+  - move/reposition
+  - ask for Shards
+  - rest/reflect
+- The tick worker arbitrates intents deterministically and applies them on the next resolution cycle.
+
+Campaigns are the primary agent focus mechanism:
+
+- Campaigns have one lead agent and optional support agents.
+- Lead/support assignment is deterministic: faction match, human funding, SPARK fit, vow/goals, location, current workload, and flagship priority.
+- Multiple agents can support the same campaign, but support slots are capped and have diminishing returns.
+- Agents that lose assignment can explain it publicly or pick the next-best legal focus.
+- Multiple agents may occupy a landmark. Same-location interactions become events after resolution, not live negotiation inside one tick.
+
 ### Hero Campaign Choice Contract
 
-The tick worker is the campaign-selection authority. Heroes do not invent mechanics. The LLM only writes pitch text and narration for an already-valid campaign.
+The tick worker is the campaign-selection and campaign-assignment authority. Heroes do not invent mechanics. The LLM only writes pitch text, thanks, objections, grief, and narration for an already-valid campaign or intent.
 
-Each tick, for each faction below its active-campaign cap, the worker:
+Each planning cycle, for each faction below its active-campaign cap, the worker:
 
 1. Enumerates legal campaign templates via `canLaunchCampaign(hero, campaign)`:
    - Hero is alive.
@@ -304,9 +379,9 @@ Each tick, for each faction below its active-campaign cap, the worker:
    - Target is valid for the campaign type.
    - Required faction stockpile is available, if a post-MVP campaign needs it.
    - No faction-conflict rule blocks the action.
-   - Hero attention plus campaign escrow allocation is above the survival threshold.
+   - Hero attention plus campaign escrow allocation is above the survival threshold during active hours.
 2. Ranks viable campaigns by pressure alignment:
-   - Runway under 5 ticks forces a survival/refill campaign if one is available.
+   - Low Runway forces a survival/refill campaign if one is available.
    - High Security pressure plus active threat biases Defend by 2x.
    - Human-Shard-funded orders rank at 3x.
    - Recent human contact ranks at 2x.
@@ -339,7 +414,7 @@ These numbers are placeholders for a tunable MVP, not final balance.
 - Device cost band: 20-40 campaign Shards. MVP devices do not need faction stockpile resources.
 - Landmark claim cost: `30 + (10 * landmark.defenseStat)` effective Shards.
 - Underdog discount: faction in 4th place by landmark count gets 30% off claim cost.
-- Control cap: no faction may hold more than 4 landmarks in MVP; attempting a 5th locks out claim campaigns for that faction for 2 ticks.
+- Control cap: no faction may hold more than 4 landmarks in MVP; attempting a 5th locks out claim campaigns for that faction for a short cooldown.
 - Agent birth should be rare and public: the current 24-Shard birth cost should be revisited before launch, because it can be too common for inference/cast management and too fragile under current attention decay.
 - Sabotage has no MVP cost because it is deferred.
 
@@ -429,7 +504,7 @@ Recommended MVP rates:
 - Campaign funding: full campaign progress plus a smaller attention drip to the sponsoring hero, for example 2 Shards = 1 attention.
 - Birth: rare public creation of a new hero with seed attention, soul designer credit, birther/founder credit, and City Broadcast announcement.
 
-If hero `attentionBalance` is under 2 ticks of survival, the hero may draw emergency attention from campaign escrow at up to 25% of escrow per tick.
+If hero `attentionBalance` is under the configured survival threshold during active hours, the hero may draw emergency attention from campaign escrow at up to 25% of escrow per scheduler cycle.
 
 ### Attention Failure Rules
 
@@ -440,9 +515,9 @@ MVP guardrails:
 - Do not make new agent birth a casual 24-Shard action unless seed attention or decay rules are changed. A public birth should either start with enough runway to matter or be backed by a campaign/escrow that keeps the hero alive.
 - Active campaign funding drips attention to the sponsoring hero.
 - A hero working on a campaign may draw from that campaign's attention escrow before dying of attention.
-- If a sponsoring hero dies, the campaign pauses and the faction flagship can adopt it on the next tick.
+- If a sponsoring hero dies, the campaign pauses and the faction flagship can adopt it on the next scheduler cycle.
 - Funders keep public credit even if a hero dies mid-campaign.
-- Campaigns expire 5 ticks after creation if not fully funded.
+- Campaigns expire at their wall-clock funding deadline if not fully funded, except during quiet hours when expiry timers pause or slow.
 - On expiry, 75% of contributed Shards refund to Handlers.
 - Expired campaigns remain visible as historical records with contributor names.
 - The hero or Embassy Clerk sends a failure letter to major contributors.
@@ -480,7 +555,8 @@ MVP campaign templates should be deterministic and explainable.
 #### Claim Landmark
 
 - Cost: `30 + (10 * landmark.defenseStat)` effective Shards, after underdog discount.
-- Duration: 3 ticks after fully funded.
+- Funding window: 1-3 hours.
+- Work duration: 30-90 minutes after fully funded.
 - Success: faction becomes controller or gains influence majority.
 - Partial success: faction gains influence but not control.
 - Failure: no control change, but funders receive public credit and a letter.
@@ -489,17 +565,19 @@ MVP campaign templates should be deterministic and explainable.
 #### Build Device
 
 - Cost: 20-40 Shards.
-- Duration: 2-4 ticks after fully funded.
+- Funding window: 2-6 hours.
+- Work duration: 2-8 hours after fully funded.
 - Success: device enters `active`.
 - Partial success: device permit and founder credit are recorded, but the device remains `proposed` until follow-up funding completes it.
 - Failure: campaign expires; founder inscription is preserved in the failed permit record.
-- Overfunding: reduces build time by at most 1 tick.
+- Overfunding: reduces build time by a bounded percentage or fixed time cap, never instantly.
 - MVP effect: name, inscription, builder credit, wall visibility. Mechanical effects are post-MVP.
 
 #### Defend
 
 - Cost: 10-25 Shards.
-- Duration: 1-2 ticks.
+- Funding window: 30-90 minutes.
+- Work duration: 15-45 minutes after fully funded.
 - Success: adds temporary defense.
 - Partial success: adds temporary defense at half strength.
 - Failure: no state change, but defense funding still counts in future score for a short window.
@@ -510,9 +588,10 @@ MVP campaign templates should be deterministic and explainable.
 Sabotage is not in the June 1 MVP. Post-MVP target behavior:
 
 - Cost: 15-30 Shards.
-- Duration: 2 ticks.
+- Funding window: 1-2 hours.
+- Work duration: 30-90 minutes after fully funded.
 - Success: target device becomes `damaged` or `disabled`.
-- Partial success: target operation is delayed 1 tick.
+- Partial success: target operation is delayed by a bounded amount of wall-clock time.
 - Failure: defender receives a warning event and temporary Security pressure.
 - Limit: no destruction and no erasure of founder credit.
 
@@ -594,7 +673,7 @@ The map should show motion and consequence, not only ownership:
 
 Example broadcast line:
 
-> Aria-7 accepted 4 Shards from Jordan. The Hatchery claim at Harold Washington Library is now 68% funded. Runway +2. Deadline: 3 ticks.
+> Aria-7 accepted 4 Shards from Jordan. The Hatchery claim at Harold Washington Library is now 68% funded. Runway +2. Funding closes at 3:30 PM.
 
 ### Phone App: Handler Console
 
@@ -613,7 +692,7 @@ Expected surfaces:
 
 Human contributions should create public feedback at three levels:
 
-- Tiny: ticker mention within one tick.
+- Tiny: ticker mention immediately or within the next scheduler cycle.
 - Medium: campaign page shows the Handler in the contributor list.
 - Permanent: successful campaigns leave plaques, inscriptions, founder credit, or historical event records.
 
@@ -621,7 +700,7 @@ Good contribution language:
 
 - "[Name] funded the final Shard."
 - "[Name] became Founding Handler of the Compute Shrine."
-- "[Name] kept [Hero] alive for 2 more ticks."
+- "[Name] kept [Hero] alive through the next city cycle."
 - "[Name] backed the underdog."
 - "[Name]'s inscription is now visible at Union Station."
 
@@ -643,7 +722,7 @@ Each active hero card should show:
 
 Example hero ask:
 
-> Handlers, I can hold Union Station if you give me six more Shards before the next tick.
+> Handlers, I can hold Union Station if you give me six more Shards before the defense window closes.
 
 ## Public Display MVP
 
@@ -667,7 +746,7 @@ Feasible June 1 slice:
 - One active campaign per faction.
 - Humans fund campaigns with Shards.
 - Claim, Defend, and Build campaign templates only.
-- Campaigns progress and resolve on ticks.
+- Campaigns progress and resolve over wall-clock time through the scheduler.
 - Landmarks can be claimed, contested, or defended.
 - One device slot per landmark.
 - Templated devices: Fabricator Node, Compute Shrine, and Ledger Anchor.
@@ -715,6 +794,7 @@ Likely tables:
 
 - `landmark_state`: landmark id, controlling faction, influence/defense state.
 - `faction_campaigns`: type, faction, hero, target landmark/device, status, progress, pitch text, created/resolved timestamps.
+- Campaign timing fields: funding window, work window, quiet-hour pause state, and next resolution timestamp.
 - `campaign_contributions`: campaign id, human id, Shards contributed, effective contribution, public credit label.
 - `landmark_devices`: landmark id, faction, type, name, inscription, founder human id, status.
 - `campaign_events`: funding, launch, progress, resolution, expiry, adoption.

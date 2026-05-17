@@ -14,6 +14,7 @@ Current active design work:
   landmarks, devices, SPARK gameplay labels, and human Handler loop.
 - `docs/design/design-notes.md` - review synthesis, rationale, and deferred ideas.
 - `docs/design/design-questions.md` - open human/product questions before implementation.
+- `docs/design/pitch-overview.md` - concise pitch-ready overview of the autonomy/economy design.
 - `docs/design/ai-review-prompt.md` - prompt for external AI reviewers.
 
 Do not commit secrets, personal API keys, local session tokens, or private source material.
