@@ -1,5 +1,21 @@
 # Null City v2 — Worldbox
 
+## Active Design Context
+
+Before making autonomy, economy, or territory-control decisions, read:
+
+1. `README.md`
+2. `DESIGN.md`
+3. `docs/design/autonomy-economy.md` when present
+
+Current active design work:
+
+- `docs/design/autonomy-economy.md` - near-future Chicago autonomy, faction campaigns,
+  landmarks, devices, SPARK gameplay labels, and human Handler loop.
+- `docs/design/ai-review-prompt.md` - prompt for external AI reviewers.
+
+Do not commit secrets, personal API keys, local session tokens, or private source material.
+
 ## Overview
 Null City v2 is an in-person event RPG for Onion DAO 2026, hosted at the embassy in Chicago.
 Humans earn **Shards** at workshops, exchange them with AI residents for faction resources,
