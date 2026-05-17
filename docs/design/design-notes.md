@@ -47,6 +47,47 @@ Feedback came from Gemini, Codex, Claude, and parallel reviewer agents. The comm
 - LLM output is pitch and narration only, stored and replayed.
 - SPARK biases campaign selection and tone, not outcome resolution.
 - Ties go to the defender.
+- Treat Null City as an always-on OnionDAO experiment that consumes OnionDAO profiles and Shards/points, not as the required narrative wrapper for every workshop and challenge.
+
+## Dev's House Design Session - 2026-05-17
+
+The session clarified product boundary more than mechanics. The strongest consensus was that Null City should remain alive as a visible autonomous-world experiment, while OnionDAO still needs its own workshop, challenge, point, and prize track.
+
+### Main Takeaway
+
+Null City should run at OnionDAO, not replace OnionDAO. OnionDAO can expose profiles, Shards/points, attendance, and challenge outcomes; Null City consumes those signals as influence. The MVP bridge can be simple: humans do real event activity, earn Shards or points, and spend them into the city.
+
+### Two-Track Model
+
+- OnionDAO track: workshops, skill challenges, attendance, prizes, points/Shards, badges, and learning progression.
+- Null City track: virtual Chicago, residents/heroes, factions, campaigns, landmarks, map state, letters, and soul archive.
+- Bridge: profile names/images, Shard/point balances, public monitor, optional future challenge hooks, and an API for richer integration later.
+
+### What Landed
+
+- Virtual Chicago plus a public monitor still feels like the right presentation layer.
+- Factions are useful for legibility: people can pick a color, value system, favorite resident, or underdog.
+- Campaigns/bounties remain the best human-to-world interface for Null City.
+- The strongest human-care loop is social proof: "I earned this at OnionDAO, I spent it here, and now my name/image changed the city."
+- The city can be a month-long living exhibit: always running, easy to glance at, deeper for people who get hooked.
+
+### What To Avoid For MVP
+
+- Do not force hardware, AI, cyber, and blockchain workshops to each have custom Null City mechanics.
+- Do not make hardware beacons, ESP32 puzzles, or physical installations required for the core loop.
+- Do not make player-created factions or governance part of launch scope.
+- Do not frame the core game as AI versus humans or a hostile villain story.
+- Do not make the monitor show only abstract territory; show residents, human profile images, current needs, and recent consequences.
+
+### Tone Notes
+
+Keep the conflict public, civic, and legible rather than grim or violent. The factions can contest control, resources, legitimacy, and civic authority without needing a dark spy-war tone.
+
+`Residents` is probably the safer user-facing word than `agents` when the app wants empathy. `Agents` and `heroes` can remain design shorthand; faction dialogue can call them residents, operators, field minds, or named people.
+
+### Design Consequence
+
+The MVP should spend its energy on the Shard-to-campaign-to-map loop, profile-visible contributions, faction standing, resident attachment, and the final soul archive. More direct workshop integrations can come later as optional "this challenge emitted a city event" hooks.
 
 ## Candidate Story Spine
 

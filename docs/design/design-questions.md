@@ -5,6 +5,12 @@ Companion spec: `docs/design/autonomy-economy.md`
 
 ## Blockers Before Implementation Planning
 
+### 0. OnionDAO / Null City Boundary
+
+Default proposal: Null City is a sponsored always-on experiment at OnionDAO, not the central narrative wrapper for every workshop and challenge. OnionDAO owns workshops, challenges, attendance, prizes, and the Shard/point faucet. Null City consumes OnionDAO profiles and Shards/points through a simple bridge, then turns spending into public city influence.
+
+Question: should launch materials describe Null City as the official primary event narrative, a sponsored side experiment, or an optional project built on OnionDAO data? Recommended default: sponsored side experiment with strong monitor visibility.
+
 ### 1. Launch Landmark Set
 
 Default proposal:
@@ -179,3 +185,4 @@ Question: which ordinances make the city more dramatic without feeling unfair?
 - Should future sabotage be anonymous, public, or revealed by Locksmith-style investigation?
 - Should Pokemon-style defenders become robotic agents, protocols, drones, or AI subagents?
 - Should a later season add a more aggressive overseer mode, shrinking map, or hazard events once the civic campaign loop is stable?
+- Which OnionDAO challenge outcomes should eventually create direct Null City effects through the API?

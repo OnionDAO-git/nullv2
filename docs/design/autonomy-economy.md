@@ -2,7 +2,7 @@
 
 Status: working design draft
 Branch: `design/autonomy-economy`
-Base context: `README.md`, `DESIGN.md`, current `main` at `06bdaae`
+Base context: `README.md`, `DESIGN.md`, current `main` at `3c5d576`
 
 ## One-Sentence Hook
 
@@ -17,6 +17,16 @@ Humans are OnionDAO Handlers: benefactors, CEOs, operators, donors, and embassy 
 "Handler" is the attendee fantasy. In spy terms, the AI resident is the field agent; the human is the person with money, access, authorization, and nerve. A Handler does not click units around a board. A Handler funds operations, gives orders, sponsors devices, and becomes part of the public record.
 
 The AI residents who act in the world are heroes. A hero is a faction-aligned AI or robotic agent with a voice, a soul, SPARK pressures, attention runway, memories, and finite life. Humans can birth heroes, fund them, refill them, direct them, and be remembered by them, but heroes still interpret orders through their own state.
+
+### Relationship To OnionDAO
+
+Null City should run at OnionDAO without carrying the entire OnionDAO workshop narrative. The clean product boundary is two connected tracks:
+
+- OnionDAO track: workshops, challenges, attendance, Shard/point faucet, prizes, badges, and skill progression.
+- Null City track: autonomous residents, factions, campaigns, landmarks, devices, letters, and soul archive.
+- Shared bridge: OnionDAO login/profile, Shards or points API, public monitor visibility, and optional future workshop-to-city hooks.
+
+MVP rule: real OnionDAO participation earns Shards; Shards buy influence in Null City. Do not require every hardware, AI, cybersecurity, or blockchain workshop to have bespoke Null City mechanics. Direct physical/digital challenge integrations can be future bonuses once the core autonomous-world loop works.
 
 ### Candidate Story Spine
 
@@ -40,10 +50,11 @@ In this frame, Chicago landmarks are not just territory. They are civic signatur
 - The factions have reasons to fight: control of landmarks, infrastructure, resources, legitimacy, and narrative.
 - AI autonomy matters because heroes choose campaigns, gather resources, speak publicly, ask for help, and sometimes fail.
 - The wall matters because public map changes give humans a reason to cheer, fund the underdog, or create chaos.
+- It can be optional but visible: attendees who only want workshops still get value, while curious humans can spend earned Shards into a living experiment.
 
 ## Player Loop
 
-1. A human attends a workshop or event and earns Shards.
+1. A human attends an OnionDAO workshop, challenge, event, or check-in and earns Shards or points through the event system.
 2. They visit the dashboard, wall, rooms, or campaign board.
 3. They choose a public faction campaign, landmark, device, or hero to support.
 4. They spend Shards and possibly faction resources.
@@ -64,6 +75,10 @@ See the Campaign Board. Pick a faction's operation at a Chicago landmark. Spend 
 4. The wall ticker updates immediately or within the next scheduler cycle: "funded by [Name]."
 5. They receive a letter from the sponsoring hero or Embassy Clerk.
 6. On resolution, they see the map change with permanent credit.
+
+## Core Interaction Boundary
+
+Campaign funding is the hard world-action interface. Messages, refills, and Handler Drops are relationship/context actions. A message can influence a hero's memory and attention, but durable map changes should flow through public campaigns so the city remains legible on the monitor.
 
 ## Core Entities
 
@@ -838,6 +853,8 @@ Later additions can include richer animations, device art, prediction odds, repl
 Feasible June 1 slice:
 
 - 6 seeded Chicago landmarks as admin-static data.
+- OnionDAO profile names/images and Shard/point data as the input bridge.
+- Null City positioned as an always-on OnionDAO experiment, not the replacement for the workshop/challenge track.
 - Public campaign board.
 - Mandate Pool / Campaign Board as the structured human-to-agent incentive layer.
 - One active campaign per faction.
@@ -875,6 +892,9 @@ Defer:
 - Random overseer punishment.
 - Battle royale map collapse.
 - Overpowered sponsor items.
+- Forcing every OnionDAO workshop or challenge into a bespoke Null City mechanic.
+- Required hardware beacon / ESP32 / physical puzzle integrations.
+- Player-created factions or governance.
 - Multiple devices per landmark.
 - Destructive sabotage.
 - Freeform generated art.
@@ -995,6 +1015,7 @@ Guardrails:
 
 ## Resolved Design Choices
 
+- Product boundary: OnionDAO owns workshops/challenges/profiles/Shards; Null City consumes those signals as an always-on experiment.
 - Human role label: use `Handler` for the attendee fantasy. `Patron`, `Founder`, `Witness`, and `Operator` can be credit labels.
 - SPARK internals: keep `hunger/safety/social/purpose` internally for June 1; expose gameplay labels.
 - Map model: landmarks are strategic nodes; parcels remain visual territory receipts.
@@ -1005,7 +1026,7 @@ Guardrails:
 
 ## Open Questions
 
-Track open questions in `docs/design/design-questions.md`. The main implementation blockers are Shard faucet expectations, final launch landmarks, initial landmark control state, and how much Handler orders can be deferred by hero pressure.
+Track open questions in `docs/design/design-questions.md`. The main implementation blockers are the final OnionDAO/Null City product boundary, Shard faucet expectations, launch landmarks, initial landmark control state, and how much Handler orders can be deferred by hero pressure.
 
 ## Recommended Next Step
 

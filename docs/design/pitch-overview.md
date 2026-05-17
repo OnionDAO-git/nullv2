@@ -13,9 +13,19 @@ The game works if a human can understand this in 30 seconds:
 
 > Pick a faction. Fund an operation. Watch Chicago change. Your name stays on the record.
 
+## Product Boundary
+
+Null City is not the whole OnionDAO workshop narrative. It is the always-on world experiment that uses OnionDAO participation as fuel.
+
+- OnionDAO track: workshops, challenges, attendance, points/Shards, prizes, badges, and skill progression.
+- Null City track: autonomous residents, factions, campaigns, landmarks, devices, letters, and soul archive.
+- Shared bridge: OnionDAO profiles, Shards/points API, public monitor visibility, and optional future workshop-to-city hooks.
+
+This lets the workshops stay focused on learning and challenges while Null City stays focused on autonomous agents and public world state.
+
 ## Launch Loop
 
-1. Human earns Shards at a workshop, quest, competition, check-in, or staff award.
+1. Human earns Shards or points through an OnionDAO workshop, quest, competition, check-in, or staff award.
 2. Human sees the Campaign Board or City Broadcast.
 3. Human funds a public faction operation with at least 1 Shard.
 4. The ticker and campaign page update immediately.
@@ -144,6 +154,8 @@ MVP can ship this simply: curated soul drafts, designer/birther credit, public b
 ## MVP In
 
 - 6 seeded landmarks.
+- OnionDAO profile/Shards/points bridge.
+- Always-on experiment positioning inside the OnionDAO event, without replacing the workshop/challenge track.
 - City Broadcast web map.
 - Campaign Board.
 - One active campaign per faction.
@@ -175,10 +187,14 @@ MVP can ship this simply: curated soul drafts, designer/birther credit, public b
 - Random overseer punishment.
 - Battle royale map collapse.
 - Overpowered sponsor items.
+- Forcing every workshop or challenge into a bespoke Null City story mechanic.
+- Hardware beacons or physical puzzle integrations as required dependencies.
+- Player-created factions or governance.
 - Deep broadcast animation polish.
 
 ## Decisions Needed
 
+- Formal product boundary: primary OnionDAO narrative, sponsored Null City experiment, or optional project built on OnionDAO data.
 - Final Shard scale: small Shards, current 5-Shard workshops, or larger Influence converted down.
 - Launch tick interval and quiet hours.
 - Campaign durations and funding windows.
