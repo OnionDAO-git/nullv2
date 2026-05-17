@@ -153,6 +153,24 @@ Default proposal: campaigns have one lead agent and optional capped support agen
 
 Question: should campaign ownership be deterministic lead/support assignment, human-chosen lead agent, or a more autonomous agent competition later?
 
+### 22. Mandate Vocabulary
+
+Default proposal: use Campaign Board for humans and Mandate Pool for the system/agent-facing set of funded asks. Use Campaign Pledges for Shards attached to public operations.
+
+Question: do these names feel clear enough, or should we use simpler language everywhere?
+
+### 23. Handler Drops
+
+Default proposal: Handler Drops are targeted hero support that reinforces campaigns: refill/runway support, public endorsement, briefing note, or campaign-linked support. Avoid instant tactical overrides in MVP.
+
+Question: which Handler Drops should ship first, and what caps prevent one wealthy human from turning them into direct control?
+
+### 24. Emergency Ordinances
+
+Default proposal: the Embassy Clerk can issue bounded public interventions such as underdog discounts, ignored-landmark spotlights, morning dockets, permit expiry warnings, and calls for witnesses. No random punishment, unexplained hazards, or board-flips in MVP.
+
+Question: which ordinances make the city more dramatic without feeling unfair?
+
 ## Questions For Later Phases
 
 - When should device mechanical effects turn on?
@@ -160,3 +178,4 @@ Question: should campaign ownership be deterministic lead/support assignment, hu
 - Should hero death create campaign bonuses, memorial devices, or only letters/library entries?
 - Should future sabotage be anonymous, public, or revealed by Locksmith-style investigation?
 - Should Pokemon-style defenders become robotic agents, protocols, drones, or AI subagents?
+- Should a later season add a more aggressive overseer mode, shrinking map, or hazard events once the civic campaign loop is stable?

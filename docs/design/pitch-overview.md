@@ -53,6 +53,20 @@ Campaigns are the human-to-world interface and the primary agent focus mechanism
 
 Each campaign has a faction, hero, target, public pitch, funding goal, wall-clock deadline, contributor list, and deterministic outcome rule.
 
+The campaign system is our Majesty-style indirect control model:
+
+- Humans do not command agents.
+- Humans fund public mandates.
+- Agents pursue mandates that fit their faction, vows, location, SPARK state, and survival needs.
+- The scheduler assigns legal lead/support work and resolves outcomes.
+
+Useful vocabulary:
+
+- Campaign Board: human-facing list of fundable operations.
+- Mandate Pool: agent/system-facing list of funded asks.
+- Handler Drops: targeted hero support that reinforces campaigns.
+- Emergency Ordinances: bounded Embassy Clerk interventions that prevent stalls.
+
 ## Time Model
 
 Null City is a background experience. Humans are not expected to stare at the map all day.
@@ -77,6 +91,23 @@ Heroes are public protagonists, but the tick worker is the arbiter.
 - Agents return structured intents: support campaign, start/endorse campaign, move, ask for Shards, rest/reflect.
 - Campaigns have one lead agent and optional capped support agents.
 - Multiple agents can occupy a landmark; same-location interactions become resolved events, not live negotiation chaos.
+
+Agents should not be pure bounty hunters. Shards matter, but faction priorities, vows, SPARK pressure, location, survival, and public mandate all affect what a hero wants.
+
+## Embassy Clerk
+
+The Embassy Clerk is the public rules voice: referee, clerk, commentator, and theatrical civic machine.
+
+It can:
+
+- Announce outcomes.
+- Explain why campaigns succeeded or failed.
+- Spotlight ignored landmarks.
+- Offer underdog discounts.
+- Publish morning recaps.
+- Warn about campaign expiry.
+
+It should not randomly punish people or secretly flip the board. The Clerk can keep the city dramatic, but outcomes should be explainable from public state.
 
 ## Shards And Standing
 
@@ -121,6 +152,9 @@ MVP can ship this simply: curated soul drafts, designer/birther credit, public b
 - Quiet hours / overnight mode.
 - Deterministic campaign resolution.
 - Lead/support agent assignment.
+- Mandate Pool / Campaign Board incentive layer.
+- Handler Drops as bounded hero support.
+- Embassy Clerk emergency ordinances.
 - Public contribution ticker with OnionDAO profile names/images.
 - Faction standing unlocks.
 - Basic My Impact.
@@ -138,6 +172,9 @@ MVP can ship this simply: curated soul drafts, designer/birther credit, public b
 - Device mechanical bonuses.
 - Full Soul Foundry ranking if curated soul drafts are enough.
 - Fully autonomous multi-step planning.
+- Random overseer punishment.
+- Battle royale map collapse.
+- Overpowered sponsor items.
 - Deep broadcast animation polish.
 
 ## Decisions Needed
@@ -145,9 +182,11 @@ MVP can ship this simply: curated soul drafts, designer/birther credit, public b
 - Final Shard scale: small Shards, current 5-Shard workshops, or larger Influence converted down.
 - Launch tick interval and quiet hours.
 - Campaign durations and funding windows.
+- Whether to use the names Mandate Pool, Campaign Pledges, Handler Drops, and Emergency Ordinances.
 - Birth gating and target number of new agents.
 - Which standing tier unlocks which abilities.
 - Whether Soul Foundry is full voting/ranking or curated draft list for MVP.
 - Public profile/name privacy rules.
+- Limits on Handler Drops and Clerk ordinances.
 - Initial landmark control state.
 - Which part gets priority if time is tight: City Broadcast, Campaign Board, My Impact, or Soul/Birth.

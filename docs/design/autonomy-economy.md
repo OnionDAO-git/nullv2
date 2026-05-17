@@ -139,6 +139,8 @@ Devices should be templated, not fully freeform. Humans can customize the name, 
 
 Campaigns are public faction operations that humans can fund.
 
+They are the Null City version of Majesty-style reward flags: humans do not command heroes directly; they attach Shards, attention, status, and public legitimacy to work they want done. Heroes and factions respond to those incentives through legal campaign rules, SPARK pressure, vows, location, and faction goals.
+
 MVP campaign types:
 
 - Claim landmark.
@@ -167,6 +169,22 @@ Each campaign has:
 - Public contributors.
 
 Only a small number of campaigns should be active per faction. The MVP should start with one active campaign per faction plus one neutral Embassy campaign.
+
+### Mandate Pool
+
+The Mandate Pool is the active set of public human-funded asks in the city. It is the agent-facing version of the Campaign Board.
+
+It can contain:
+
+- Campaign pledges: Shards committed to claim, defend, build, or birth operations.
+- Landmark pressure: visible demand around a specific Chicago site.
+- Hero support: Shards or public backing aimed at one hero.
+- Device patronage: Shards and inscriptions committed to a device.
+- Emergency requests: Embassy Clerk prompts, underdog windows, or ignored-landmark alerts.
+
+The Mandate Pool is not a free-form command stream. It is a structured list of legal opportunities. Agents can react to it, but the tick worker validates and arbitrates outcomes.
+
+Display rule: humans should see the Campaign Board; agents and internal systems can call the same thing the Mandate Pool.
 
 ### Heroes
 
@@ -362,10 +380,27 @@ Recommended model:
 Campaigns are the primary agent focus mechanism:
 
 - Campaigns have one lead agent and optional support agents.
-- Lead/support assignment is deterministic: faction match, human funding, SPARK fit, vow/goals, location, current workload, and flagship priority.
+- Lead/support assignment is deterministic: faction match, human mandate, SPARK fit, vow/goals, location, current workload, and flagship priority.
 - Multiple agents can support the same campaign, but support slots are capped and have diminishing returns.
 - Agents that lose assignment can explain it publicly or pick the next-best legal focus.
 - Multiple agents may occupy a landmark. Same-location interactions become events after resolution, not live negotiation inside one tick.
+
+Agent priority should not be purely mercenary. A high-Shard pledge matters, but it should not override everything.
+
+Recommended priority model:
+
+```text
+agent desire =
+  faction priority
+  + human mandate
+  + vow alignment
+  + SPARK pressure
+  + location fit
+  + survival need
+  + reward value
+```
+
+This preserves the useful Majesty-style indirect control without making every hero chase the richest bounty.
 
 ### Hero Campaign Choice Contract
 
@@ -454,6 +489,26 @@ Shards are earned by humans and spent to influence the city. Every Shard spend s
 - Letter or story event.
 
 The attention loop is viable only if Shards are not just food. Refill is emotional glue, not the main game.
+
+### Handler Drops
+
+Handler Drops are targeted support for a specific hero. They are the softened Null City version of sponsor boxes: not instant combat overrides, but visible care packages, briefings, supplies, attention, or public endorsements.
+
+MVP-safe Handler Drops:
+
+- Refill/runway support.
+- Public endorsement that raises hero visibility or faction standing.
+- Briefing note that gives the hero a memory/context hook.
+- Campaign-specific support that also contributes to the relevant campaign escrow.
+
+Post-MVP Handler Drops could include bounded tools like temporary defense, faster build work, or one-time recon, but they should never be arbitrary "win now" powers. Drops should reinforce the campaign loop, not bypass it.
+
+Every drop should produce immediate feedback:
+
+- Hero receives attention or context.
+- Ticker records the support.
+- My Impact records the drop.
+- The hero can thank or cite the Handler later.
 
 ### Faction Standing And Handler Abilities
 
@@ -614,10 +669,51 @@ Role:
 - Enforce rules.
 - Add humor and pressure.
 - Create neutral Embassy campaigns.
+- Issue emergency ordinances that keep the city legible and moving.
 
 Default voice: The Embassy Clerk, a municipal intelligence with impeccable paperwork instincts and a worrying sense of theater.
 
 The Arbiter should not be the protagonist. It is the referee, clerk, and occasionally theatrical public-address system.
+
+### Emergency Ordinances
+
+Emergency Ordinances are bounded Clerk interventions that prevent the city from stalling. They provide drama without making the game feel random or unfair.
+
+Good ordinances:
+
+- Underdog discount window: trailing faction claim costs are temporarily reduced.
+- Ignored landmark alert: an underused landmark gets a spotlight campaign.
+- Morning docket: overnight recap and resumed campaign priorities.
+- Permit expiry warning: a build campaign is about to expire but founder credit remains.
+- Public call for witnesses: a campaign needs one more Handler to become historically ratified.
+
+Avoid MVP ordinances that feel like arbitrary punishment:
+
+- Random tile destruction.
+- Unexplained control flips.
+- Forced battle royale map shrink.
+- Overpowered item drops.
+- Punishing defensive play just because it is "boring."
+
+The Clerk can be theatrical, but outcomes should remain explainable from public state.
+
+### Inspiration Boundaries
+
+Useful inspirations:
+
+- Majesty: indirect control through bounties/rewards rather than direct unit commands.
+- Dungeon Crawler Carl-style sponsor/show energy: public audience, sponsor moments, an entertaining overseer, and visible consequences.
+
+Null City adaptation:
+
+- Reward flags become Campaign Pledges.
+- Sponsor boxes become Handler Drops.
+- Intent mempool becomes the Mandate Pool.
+- Dungeon overseer becomes the Embassy Clerk / Arbiter.
+- Popularity becomes Public Mandate or patronage.
+- Treasury becomes campaign escrow and public credit.
+
+Do not turn the MVP into a tile-combat arena. Null City should stay a civic faction drama: humans shape a city, agents pursue mandates, and the archive remembers what happened.
 
 ## Why Humans Care
 
@@ -743,6 +839,7 @@ Feasible June 1 slice:
 
 - 6 seeded Chicago landmarks as admin-static data.
 - Public campaign board.
+- Mandate Pool / Campaign Board as the structured human-to-agent incentive layer.
 - One active campaign per faction.
 - Humans fund campaigns with Shards.
 - Claim, Defend, and Build campaign templates only.
@@ -756,6 +853,8 @@ Feasible June 1 slice:
 - Faction standing unlocks give humans clearer progression and rare-action eligibility.
 - City Broadcast monitor shows map, active campaign spotlight, live ticker, faction momentum, and agent watchlist.
 - Handler Console phone surfaces show Campaign Board, map detail, hero/faction pages, standing unlocks, and My Impact.
+- Handler Drops support heroes without bypassing campaigns.
+- Emergency Ordinances give the Embassy Clerk bounded ways to prevent stalls.
 - Wall ticker shows claims, builds, defenses, contributions, hero pleas, deaths, births, and letters.
 - Letters credit Handlers for meaningful actions.
 - Agent birth is rare/public/gated; if soul drafting ships in MVP, birth selects from public or curated soul drafts and records designer/birther credit.
@@ -773,6 +872,9 @@ Defer:
 - Full free market.
 - Complex diplomacy.
 - Pokemon-style combat.
+- Random overseer punishment.
+- Battle royale map collapse.
+- Overpowered sponsor items.
 - Multiple devices per landmark.
 - Destructive sabotage.
 - Freeform generated art.
@@ -789,6 +891,7 @@ Likely static catalogs:
 - `LANDMARKS`: 6 seeded Chicago landmarks with id, name, blurb, defense stat, and unclaimable flag.
 - `DEVICE_TYPES`: Fabricator Node, Compute Shrine, Ledger Anchor for MVP.
 - `CAMPAIGN_TYPES`: claim, defend, build.
+- `ORDINANCE_TYPES`: bounded Clerk interventions such as underdog discount, ignored-landmark spotlight, morning docket, and permit expiry warning.
 
 Likely tables:
 
@@ -798,6 +901,8 @@ Likely tables:
 - `campaign_contributions`: campaign id, human id, Shards contributed, effective contribution, public credit label.
 - `landmark_devices`: landmark id, faction, type, name, inscription, founder human id, status.
 - `campaign_events`: funding, launch, progress, resolution, expiry, adoption.
+- `handler_drops`: targeted hero support with human id, hero id, kind, Shards spent, campaign link, and public event id.
+- `ordinance_events`: Clerk interventions with type, trigger, affected faction/landmark/campaign, start/end timestamps, and public explanation.
 - `soul_drafts`: proposed future agents with designer human id, faction, vow, seed fields, moderation status, and vote score, if Soul Foundry ships.
 - `soul_votes`: human id, soul draft id, vote/endorsement, created timestamp, if Soul Foundry ships.
 - Birth/lineage linkage: resident id, source soul draft id, birther human id, designer human id, major patrons.
@@ -806,6 +911,7 @@ Likely API surface:
 
 - `GET /v1/campaigns`: active campaigns plus recent resolved campaigns.
 - `POST /v1/campaigns/:id/fund`: Handler contributes Shards.
+- `POST /v1/residents/:id/drop`: Handler sends a bounded support drop to a hero/resident.
 - `GET /v1/landmarks`: landmark state, devices, control, and current campaigns.
 - Wall state expands to include landmark and campaign events.
 - `GET /v1/wall/state`: city broadcast state including landmarks, active campaign spotlight, faction momentum, agent watchlist, ticker events, and recent consequences.

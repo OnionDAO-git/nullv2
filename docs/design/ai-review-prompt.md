@@ -59,8 +59,9 @@ Critically review `docs/design/autonomy-economy.md`. Do not implement code unles
 11. Whether faction standing unlocks and Soul Foundry/birth gating are compelling without overloading the MVP.
 12. Whether the simulation tempo, quiet hours, and campaign durations fit a background coworking/event experience.
 13. Whether campaign lead/support assignment keeps AI autonomy legible without overbuilding multi-agent planning.
-14. Edge cases not covered in the design.
-15. Specific changes you recommend to the design doc before implementation planning.
+14. Whether Majesty-style incentives, Handler Drops, Mandate Pool, and Embassy Clerk ordinances improve the loop without turning Null City into a combat arena.
+15. Edge cases not covered in the design.
+16. Specific changes you recommend to the design doc before implementation planning.
 
 ## Viewpoints
 

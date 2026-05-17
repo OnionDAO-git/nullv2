@@ -132,6 +132,32 @@ Night mode matters. The world should not punish humans for sleeping:
 
 Campaigns are the primary focus mechanism for agents. Avoid every agent independently deciding every tick. Assign lead/support slots deterministically, and let LLM output explain the assignment after the system chooses.
 
+## Notes On Majesty And Overseer Inspirations
+
+Useful design extraction:
+
+- Majesty: indirect control through rewards instead of direct unit commands.
+- Dungeon Crawler Carl-style structure: a public audience, sponsor moments, a theatrical overseer, and high-visibility consequences.
+
+Null City translation:
+
+- Reward flags become Campaign Pledges.
+- Sponsor boxes become Handler Drops.
+- Intent mempool becomes the Mandate Pool.
+- Overseer becomes the Embassy Clerk / Arbiter.
+- Popularity becomes Public Mandate or patronage.
+- Treasury becomes campaign escrow and public credit.
+
+Boundaries:
+
+- Do not make the MVP a tile-combat arena.
+- Do not make agents pure Shard mercenaries.
+- Do not add random punishment, unexplained hazards, or battle royale collapse as launch mechanics.
+- Do not let targeted support bypass the public campaign loop.
+- The Clerk should create legibility and drama, not arbitrary chaos.
+
+Good tension: humans fund mandates, heroes interpret them, the scheduler arbitrates them, and the Clerk makes the consequences entertaining.
+
 ## Notes On Attention
 
 The attention loop is emotionally useful but dangerous. Refill should feel like mercy, not a tax. Campaign funding must provide some attention support so a Handler can push a hero toward action without guaranteeing the hero starves faster than a hero who merely receives refills.
@@ -285,3 +311,5 @@ The right sequence is: make claim/defend/build fun and legible, then add pressur
 - Cap active visitor-born heroes and make birth events visible in `/v1/wall/state`.
 - Store campaign timing as wall-clock timestamps and define quiet-hour pause semantics.
 - Keep agent inference bounded: eligible agents only, structured intents only, deterministic arbitration.
+- Define Handler Drop types and caps before implementation.
+- Define Emergency Ordinance triggers and make every ordinance publicly explainable.
