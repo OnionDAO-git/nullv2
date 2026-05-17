@@ -54,8 +54,10 @@ Critically review `docs/design/autonomy-economy.md`. Do not implement code unles
 7. Whether "OnionDAO Handlers" is the right human role label.
 8. Whether fixed Chicago landmarks plus devices are a strong enough map mechanic.
 9. Whether the City Broadcast monitor and Handler Console phone surfaces make the faction struggle compelling and actionable.
-10. Edge cases not covered in the design.
-11. Specific changes you recommend to the design doc before implementation planning.
+10. Whether Shard earning/spending numbers create a tight loop for drop-ins, active participants, and power users.
+11. Whether faction standing unlocks and Soul Foundry/birth gating are compelling without overloading the MVP.
+12. Edge cases not covered in the design.
+13. Specific changes you recommend to the design doc before implementation planning.
 
 ## Viewpoints
 

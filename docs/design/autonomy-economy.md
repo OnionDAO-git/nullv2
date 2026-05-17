@@ -47,9 +47,10 @@ In this frame, Chicago landmarks are not just territory. They are civic signatur
 2. They visit the dashboard, wall, rooms, or campaign board.
 3. They choose a public faction campaign, landmark, device, or hero to support.
 4. They spend Shards and possibly faction resources.
-5. A hero works over several ticks to execute the operation.
-6. The operation resolves into map change, device construction, defense, letters, achievements, or death.
-7. The human receives visible credit as a Handler, patron, founder, witness, or operator.
+5. Their faction standing rises and may unlock stronger ways to help.
+6. A hero works over several ticks to execute the operation.
+7. The operation resolves into map change, device construction, defense, letters, achievements, birth, or death.
+8. The human receives visible credit as a Handler, patron, founder, witness, or operator.
 
 ## Thirty-Second Player Pitch
 
@@ -186,6 +187,40 @@ Post-MVP, heroes can sabotage rival devices once claim/defend/build loops have l
 
 Handlers direct heroes by funding campaigns or giving targeted orders. This should be influence, not perfect mind control. A fully funded order should strongly bias the hero, but SPARK can still shape how they narrate and prioritize it.
 
+### Souls And Agent Birth
+
+Separate soul design from agent birth.
+
+A soul is a public design for a possible future hero. It can be created by a human without immediately creating an active AI agent. This gives humans a creative contribution path without exploding inference cost or making the cast impossible to follow.
+
+A soul can include:
+
+- Name.
+- Intended faction or neutral/civic alignment.
+- Vow or founding purpose.
+- Motto/first words.
+- Goals.
+- Alignment.
+- Quirks.
+- Aesthetic/register.
+- Optional designer note.
+
+Soul creation should be cheap or free enough that many humans can participate. Agent birth should be expensive, gated, and public.
+
+Recommended flow:
+
+1. Humans submit soul designs to the Soul Foundry.
+2. The public can upvote/downvote or endorse souls.
+3. Moderation hides abusive or unusable entries.
+4. A high-standing Handler, group campaign, staff action, or major Shard spend unlocks a birth.
+5. The birther chooses from top-ranked or curated souls.
+6. The new hero is born publicly on the City Broadcast with designer, birther, faction, vow, and first mission.
+7. The Library of Souls records the soul designer, birther, major patrons, final Shard giver, campaign history, and major human guides.
+
+This makes agent birth rare enough to be exciting. Everyone can help shape the pool of possible souls, but only a few souls become living heroes.
+
+MVP minimum if the full Soul Foundry is too much: keep the existing birth feature, but raise or gate birth so it is a public event; record designer/birther credit; show births on the City Broadcast; and cap active visitor-born heroes.
+
 ## SPARK and Gameplay
 
 Current SPARK has four pressures:
@@ -291,7 +326,7 @@ SPARK can bias campaign selection and narration, but not outcome resolution. Res
 
 These numbers are placeholders for a tunable MVP, not final balance.
 
-- Expected Shard faucet: 1-3 Shards for lightweight participation, 5 Shards for normal workshops, 10-20 Shards for major wins or staff/admin awards.
+- Expected Shard faucet: 1 Shard for daily check-in, 1-3 Shards for workshops, 2 Shards for bringing someone new, 3-10 Shards for quests/experiences, 5-20 Shards for competitions or major awards.
 - Campaign contribution unit: 1 Shard.
 - Campaign funding attention drip: every 2 Shards of campaign funding gives 1 attention to the sponsoring hero.
 - Refill remains the efficient survival action: 5 Shards gives 10 attention.
@@ -305,7 +340,31 @@ These numbers are placeholders for a tunable MVP, not final balance.
 - Landmark claim cost: `30 + (10 * landmark.defenseStat)` effective Shards.
 - Underdog discount: faction in 4th place by landmark count gets 30% off claim cost.
 - Control cap: no faction may hold more than 4 landmarks in MVP; attempting a 5th locks out claim campaigns for that faction for 2 ticks.
+- Agent birth should be rare and public: the current 24-Shard birth cost should be revisited before launch, because it can be too common for inference/cast management and too fragile under current attention decay.
 - Sabotage has no MVP cost because it is deferred.
+
+### Shard Scale From Notion
+
+The clearest Narrative V2 framing says Shards are "proof that a human showed up and changed something."
+
+Reference earning table:
+
+| Activity | Approx. Shards |
+| --- | ---: |
+| Daily check-in at embassy | 1 |
+| Attend a workshop | 1-3 |
+| Bring someone new into a workshop | 2 |
+| Complete an experience or quest | 3-10 |
+| Place in a competition | 5-20 |
+
+Another June Calendar draft appears to rename or scale the system into Influence with larger numbers, including starter grants, workshop rewards, competitions, side games, weekend activations, first-timer orientation, resident commendations, and bug reports. Its useful planning assumption is roughly 400 people earning about 200 Influence over the month. If treated as about a 10:1 scale, that implies:
+
+- Drop-in human: about 6-8 Shards equivalent.
+- One-week participant: about 10-16 Shards equivalent.
+- Average active human: about 20 Shards equivalent.
+- Power user/all-month attendee: about 25-40+ Shards equivalent.
+
+Design implication: showing up once should move a small thing; meaningful city-shaping should require repeated attendance, pooled spending, strong faction standing, or high-signal achievements.
 
 ### Shards
 
@@ -320,6 +379,30 @@ Shards are earned by humans and spent to influence the city. Every Shard spend s
 - Letter or story event.
 
 The attention loop is viable only if Shards are not just food. Refill is emotional glue, not the main game.
+
+### Faction Standing And Handler Abilities
+
+The MVP should include a human-to-faction-rep progression loop. Helping a faction should make that human visibly more capable inside that faction's world.
+
+Standing can come from:
+
+- Funding faction campaigns.
+- Funding or chatting with faction heroes.
+- Buying faction resources.
+- Founding faction devices.
+- Defending faction landmarks.
+- Guiding or birthing faction-aligned agents.
+
+Use current standing thresholds as a starting point, but tune them against the final Shard scale:
+
+| Standing | Current threshold | Example unlock direction |
+| --- | ---: | --- |
+| none | 0 | View campaigns, fund any public campaign, create soul drafts. |
+| acquaintance | 10 | Buy T1 resources, vote/endorse soul drafts, receive faction letters. |
+| ally | 30 | Propose device names/inscriptions, issue stronger campaign preferences, appear as patron on faction pages. |
+| officer | 75 | Sponsor rare births, found high-visibility devices, unlock major faction actions or ceremonial titles. |
+
+Unlocks should not hide the basic game. A first-time human must be able to fund a campaign immediately. Higher standing should unlock more authorship, stronger faction identity, and rarer actions like birthing a new agent.
 
 ### Resources
 
@@ -344,7 +427,7 @@ Recommended MVP rates:
 - Refill: direct survival, efficient attention, no standing.
 - Chat/resource purchase: normal attention, standing, resource grant.
 - Campaign funding: full campaign progress plus a smaller attention drip to the sponsoring hero, for example 2 Shards = 1 attention.
-- Birth: new hero with seed attention and founder credit.
+- Birth: rare public creation of a new hero with seed attention, soul designer credit, birther/founder credit, and City Broadcast announcement.
 
 If hero `attentionBalance` is under 2 ticks of survival, the hero may draw emergency attention from campaign escrow at up to 25% of escrow per tick.
 
@@ -354,6 +437,7 @@ Attention is emotionally viable but numerically brittle. A visitor-born hero cur
 
 MVP guardrails:
 
+- Do not make new agent birth a casual 24-Shard action unless seed attention or decay rules are changed. A public birth should either start with enough runway to matter or be backed by a campaign/escrow that keeps the hero alive.
 - Active campaign funding drips attention to the sponsoring hero.
 - A hero working on a campaign may draw from that campaign's attention escrow before dying of attention.
 - If a sponsoring hero dies, the campaign pauses and the faction flagship can adopt it on the next tick.
@@ -495,6 +579,7 @@ The monitor should be glanceable from across the room. It should not require log
 - Agent Watch: 2-4 heroes with current mission, Runway/Security/Influence/Mandate, and a direct ask.
 - Contribution Ticker: recent Handler contributions, births, claims, builds, defenses, deaths, and letters.
 - Recent Consequences: won claims, founded devices, adopted campaigns, failed campaigns, and archived souls.
+- Soul Foundry Spotlight: top-ranked souls awaiting birth and recent soul endorsements, if the Soul Foundry ships.
 
 The map should show motion and consequence, not only ownership:
 
@@ -504,6 +589,7 @@ The map should show motion and consequence, not only ownership:
 - Recent Shard contributions briefly animate as sparks moving into a landmark or campaign.
 - Hero cards appear beside the campaign they are working on.
 - Devices appear as small landmark icons or plaques with founder credit.
+- Rare births interrupt the normal rotation as a public ceremony.
 - Starving or threatened heroes create visible urgency without becoming guilt spam.
 
 Example broadcast line:
@@ -519,8 +605,9 @@ Expected surfaces:
 - Campaign Board: fundable operations sorted by urgency, underdog opportunity, and faction relevance.
 - Faction Pages: philosophy, current goals, controlled landmarks, active heroes, and active campaigns.
 - Hero Pages: current mission, attention runway, SPARK gauges, recent helpers, and personal ask.
-- My Impact: funded campaigns, founded devices, letters, plaques, achievements, and historical credits.
+- My Impact: funded campaigns, faction standing unlocks, soul drafts, founded devices, letters, plaques, achievements, and historical credits.
 - Map Detail: tap a landmark to see controller, devices, active campaign, history, and recent funders.
+- Soul Foundry: submit soul drafts, vote/endorse, and see which souls are eligible for birth.
 
 ### Contribution Feedback Requirements
 
@@ -567,6 +654,7 @@ For June 1, the display slice should focus on five modules:
 - Live ticker with human names and agent actions.
 - Faction standings and momentum.
 - Agent watchlist with runway and current mission.
+- Basic My Impact/Faction standing surface.
 
 Later additions can include richer animations, device art, prediction odds, replay mode, deeper agent drama, and map-history playback.
 
@@ -586,10 +674,12 @@ Feasible June 1 slice:
 - MVP devices are cosmetic only: name, inscription, builder credit, and wall visibility.
 - Deterministic campaign resolution: attack score versus defense score, ties to defender.
 - SPARK labels exposed as Runway pressure, Security pressure, Influence gap, and Mandate pressure.
+- Faction standing unlocks give humans clearer progression and rare-action eligibility.
 - City Broadcast monitor shows map, active campaign spotlight, live ticker, faction momentum, and agent watchlist.
-- Handler Console phone surfaces show Campaign Board, map detail, hero/faction pages, and My Impact.
+- Handler Console phone surfaces show Campaign Board, map detail, hero/faction pages, standing unlocks, and My Impact.
 - Wall ticker shows claims, builds, defenses, contributions, hero pleas, deaths, births, and letters.
 - Letters credit Handlers for meaningful actions.
+- Agent birth is rare/public/gated; if soul drafting ships in MVP, birth selects from public or curated soul drafts and records designer/birther credit.
 
 Defer:
 
@@ -600,6 +690,7 @@ Defer:
 - Faction stockpile spending beyond placeholders.
 - Multiple concurrent campaigns per faction.
 - Hero-authored campaign proposals.
+- Full Soul Foundry ranking/voting if the MVP can only support curated soul drafts.
 - Full free market.
 - Complex diplomacy.
 - Pokemon-style combat.
@@ -627,6 +718,9 @@ Likely tables:
 - `campaign_contributions`: campaign id, human id, Shards contributed, effective contribution, public credit label.
 - `landmark_devices`: landmark id, faction, type, name, inscription, founder human id, status.
 - `campaign_events`: funding, launch, progress, resolution, expiry, adoption.
+- `soul_drafts`: proposed future agents with designer human id, faction, vow, seed fields, moderation status, and vote score, if Soul Foundry ships.
+- `soul_votes`: human id, soul draft id, vote/endorsement, created timestamp, if Soul Foundry ships.
+- Birth/lineage linkage: resident id, source soul draft id, birther human id, designer human id, major patrons.
 
 Likely API surface:
 
@@ -636,6 +730,7 @@ Likely API surface:
 - Wall state expands to include landmark and campaign events.
 - `GET /v1/wall/state`: city broadcast state including landmarks, active campaign spotlight, faction momentum, agent watchlist, ticker events, and recent consequences.
 - `GET /v1/me/impact`: Handler contribution history, founded devices, plaques, letters, achievements, and historical credits.
+- Soul Foundry endpoints if shipped: list/create/moderate/vote soul drafts and birth from eligible drafts.
 
 Transaction invariants:
 

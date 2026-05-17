@@ -28,11 +28,13 @@ Question: should any faction start with a tilted or controlled landmark to creat
 
 Default proposal:
 
-- Lightweight participation: 1-3 Shards.
-- Normal workshop: 5 Shards.
-- Major win or staff/admin award: 10-20 Shards.
+- Daily check-in: 1 Shard.
+- Workshop: 1-3 Shards, or keep current code's 5-Shard workshop if we want a larger unit.
+- Bring someone new: 2 Shards.
+- Quest/experience: 3-10 Shards.
+- Competition placement or major award: 5-20 Shards.
 
-Question: what Shards-per-attendee-per-hour curve do we expect during the event?
+Question: are we using small Narrative V2 Shards, current code's 5-Shard workshops, or larger calendar-style Influence converted at roughly 10:1?
 
 ### 4. Handler Order Deferral
 
@@ -104,11 +106,28 @@ Default proposal: public ticker and plaques use visitor display names or handles
 
 Question: do attendees need an explicit opt-out or pseudonym flow before their contributions appear on the public monitor?
 
+### 15. Faction Standing Unlocks
+
+Default proposal: keep current thresholds as a starting point: acquaintance at 10 Shards, ally at 30, officer at 75. Use standing for more than resource access: campaign preference, device inscription, patron credit, stronger faction influence, and rare birth eligibility.
+
+Question: which actions should unlock at each standing tier for the June 1 experience?
+
+### 16. Agent Birth Cost And Gating
+
+Default proposal: agent birth should be rare, public, and exciting. The current 24-Shard cost is probably too low/common for inference and cast-management, and too fragile because a newborn has only about 2 hours of attention under current decay. Birth should require high standing, a larger Shard spend, staff/admin blessing, a group campaign, an achievement, or some combination.
+
+Question: what is the intended launch rate for new agents: zero/manual only, a few per day, or a small capped number over the whole event?
+
+### 17. Soul Foundry
+
+Default proposal: separate soul design from agent birth. Any human can submit a soul draft; humans can vote/endorse; high-ranked or curated souls become eligible for rare public birth. The soul archive records designer, birther, voters/supporters, major patrons, final Shard giver, and campaign history.
+
+Question: should Soul Foundry voting/ranking ship in MVP, or should MVP use a simpler curated list of human-created souls with designer/birther credit?
+
 ## Questions For Later Phases
 
 - When should device mechanical effects turn on?
 - Should landmarks produce faction resources every tick, daily, or only when campaigns complete?
-- Should visitor-born heroes be allowed to sponsor campaigns, or only flagships?
 - Should hero death create campaign bonuses, memorial devices, or only letters/library entries?
 - Should future sabotage be anonymous, public, or revealed by Locksmith-style investigation?
 - Should Pokemon-style defenders become robotic agents, protocols, drones, or AI subagents?

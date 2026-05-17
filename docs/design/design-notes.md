@@ -115,6 +115,68 @@ Current working rule:
 
 This is still a tuning assumption, not proven balance.
 
+## Notes On Shard Scale
+
+The Shards RTF from the Notion research gives a useful calibration:
+
+- Daily check-in at embassy: about 1 Shard.
+- Workshop: about 1-3 Shards.
+- Bring someone new into a workshop: about 2 Shards.
+- Quest/experience completion: about 3-10 Shards.
+- Competition placement: about 5-20 Shards.
+
+A newer calendar draft appears to use larger "Influence" numbers. If those are roughly a 10:1 scale, planning assumptions become:
+
+- Drop-in human: about 6-8 Shards equivalent.
+- One-week participant: about 10-16 Shards equivalent.
+- Average active human: about 20 Shards equivalent.
+- Power user/all-month attendee: about 25-40+ Shards equivalent.
+
+Design implication: one workshop/check-in should let a human visibly affect one small public thing. Landmark claims, devices, and births should require pooled spending, repeated attendance, strong standing, or high-signal accomplishments.
+
+The current code has:
+
+- Workshop reward: 5 Shards.
+- Resources: 2/6/15 Shards.
+- Standing: 10/30/75 cumulative Shards.
+- Refill: 5 Shards -> 10 attention.
+- Birth: 24 Shards, 24-hour cooldown.
+
+The 24-Shard birth cost is probably too casual for the new autonomy design and too fragile with current attention decay. Birth should either cost substantially more, require a group/campaign, require standing/achievement/staff blessing, or come with enough runway/escrow that the newborn does not starve before humans can care.
+
+## Notes On Faction Standing And Unlocks
+
+Standing should be more than resource access. The design goal is: the more a human helps a faction, the more that faction lets them shape the city.
+
+Good unlock categories:
+
+- More authorship: device inscriptions, plaques, faction-page patron credit.
+- Stronger influence: campaign preferences, defense priorities, landmark asks.
+- More ceremony: rare birth eligibility, founder titles, end-of-event Charter credit.
+- More visibility: patron badges, letters from faction reps, My Impact summaries.
+
+Do not lock the first spend behind standing. A new attendee must be able to fund a public campaign immediately.
+
+## Notes On Soul Foundry And Birth
+
+Separating soul design from birth solves two problems:
+
+- Humans get a creative outlet without spawning too many active AI agents.
+- Birth becomes an exciting public event instead of a routine button.
+
+Useful frame:
+
+- Soul draft = possible future hero.
+- Birth = expensive/rare/civic act that makes one soul alive.
+- Soul archive = final memory chain connecting designer, birther, patrons, guides, and death/campaign history.
+
+Potential MVP cuts:
+
+- Full voting can be deferred if expensive. A curated list of soul drafts plus designer/birther credit may be enough.
+- Public ranking can start as simple up/down votes, not complex reputation.
+- Staff/admin can approve or pin souls for birth.
+- Active visitor-born heroes should have a cap so 20+ agents do not become impossible to track or pay for.
+
 ## Notes On Chicago Landmarks
 
 Landmarks should feel like real Chicago pressure points, not generic resource mines. Each should have:
@@ -189,3 +251,6 @@ The right sequence is: make claim/defend/build fun and legible, then add pressur
 - Add schema/API sketch before coding.
 - Expand `/v1/wall/state` into a City Broadcast payload rather than only parcels, leaderboard, births, deaths, and achievements.
 - Add a Handler impact endpoint or view so humans can see funded campaigns, founded devices, plaques, letters, achievements, and historical credits.
+- Add explicit standing/ability unlock rules before coding campaign funding UX.
+- Decide whether Soul Foundry ships as full voting/ranking or as a curated birth-candidate list.
+- Cap active visitor-born heroes and make birth events visible in `/v1/wall/state`.
