@@ -86,6 +86,12 @@ Default proposal: `Handler` is the primary role. `Patron`, `Founder`, `Witness`,
 
 Question: should faction dialogue use "Handler" consistently, or use softer terms like Patron/Sponsor when a hero is thanking a human?
 
+### 12. Story Spine
+
+Default proposal: treat "The First Charter" as a candidate frame, not final canon. The factions are fighting to define what makes AI life legitimate enough to protect, and each controlled Chicago landmark becomes a civic signature for one faction's vision.
+
+Question: is this empathetic and concrete enough for attendees, or do we need a sharper external crisis, villain, countdown, or personal hero-centered story for the launch experience?
+
 ## Questions For Later Phases
 
 - When should device mechanical effects turn on?

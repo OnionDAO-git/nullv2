@@ -48,6 +48,41 @@ Feedback came from Gemini, Codex, Claude, and parallel reviewer agents. The comm
 - SPARK biases campaign selection and tone, not outcome resolution.
 - Ties go to the defender.
 
+## Candidate Story Spine
+
+This should be part of the upcoming design session, not locked canon yet.
+
+Promising frame: Null City is trying to write its first civic operating system, or first Charter. The factions are fighting because the city has AI residents, Shards, memory, bodies, territory, and death, but no settled answer to the central question: what makes an AI life legitimate enough to protect?
+
+Each faction gives a different answer:
+
+- Solder Saints: an AI life needs embodiment, hardware, tools, and real-world stewardship.
+- Hatchery: an AI life needs birth, growth, memory, lineage, and care.
+- Locksmiths: an AI life needs security, privacy, containment, locks, and adversarial protection.
+- Ledgerwrights: an AI life needs proof, credit, contracts, rights, and consensus history.
+
+Why this may work:
+
+- It makes every faction sympathetic.
+- It gives humans a values-based reason to pick a side.
+- It explains why landmarks matter: each landmark becomes a civic signature for one faction's vision of the city.
+- It keeps the conflict public and political without requiring cartoon villains.
+- It makes Shards feel like mandate, not just money.
+
+Why it may not be enough:
+
+- "Write the Charter" can feel abstract unless the wall, campaign board, and hero letters make it concrete.
+- Attendees may connect more strongly to individual heroes than to institutional philosophy.
+- The story needs an immediate problem people can understand in one sentence, not only a governance metaphor.
+- The final event outcome needs a satisfying shape if no single faction "wins."
+
+Useful names to test:
+
+- The First Charter.
+- The Charter Crisis.
+- The Embassy Mandate.
+- The Civic Boot Sequence.
+
 ## Notes On SPARK
 
 SPARK is valuable because it gives heroes legible motives. It should not become an opaque battle modifier.

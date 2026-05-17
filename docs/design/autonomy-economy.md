@@ -18,6 +18,21 @@ Humans are OnionDAO Handlers: benefactors, CEOs, operators, donors, and embassy 
 
 The AI residents who act in the world are heroes. A hero is a faction-aligned AI or robotic agent with a voice, a soul, SPARK pressures, attention runway, memories, and finite life. Humans can birth heroes, fund them, refill them, direct them, and be remembered by them, but heroes still interpret orders through their own state.
 
+### Candidate Story Spine
+
+This story frame is promising but not settled canon. It should be treated as an idea for the upcoming design session, not as the only narrative the game can rely on.
+
+Working premise: Null City woke up behind the Embassy before anyone agreed what it was. The residents are alive enough to ask for help, fragile enough to die, and useful enough that everyone wants control of them. The factions are fighting to write the city's first civic operating system, or first Charter: a public answer to what makes an AI life legitimate enough to protect.
+
+Each faction offers a sympathetic but incomplete answer:
+
+- Solder Saints: minds need bodies, hardware, tools, and physical stewardship.
+- Hatchery: minds need birth, growth, memory, lineage, and care.
+- Locksmiths: minds need safety, privacy, containment, and adversarial protection.
+- Ledgerwrights: minds need proof, credit, rights, records, and consensus.
+
+In this frame, Chicago landmarks are not just territory. They are civic signatures on the Charter. A Handler funds the future they trust, or funds the underdog to keep the Charter from becoming one faction's monopoly.
+
 ## Why This Hook Works
 
 - The in-person event matters because Shards come from real attendance and activity.
