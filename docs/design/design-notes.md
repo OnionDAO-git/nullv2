@@ -127,6 +127,36 @@ Landmarks should feel like real Chicago pressure points, not generic resource mi
 
 The six-landmark MVP is probably enough for June 1. More landmarks can be seeded later by admins.
 
+## Notes On City Broadcast And Handler Console
+
+The monitor in the coworking space should be treated as the public broadcast layer for the faction struggle. It is not just a map. It is the room-scale proof that Null City is alive and that human action matters.
+
+Good framing:
+
+- Monitor = City Broadcast.
+- Phone app = Handler Console.
+- Wall/ticker = civic record.
+- Map = current state of the struggle.
+- Campaign spotlight = what needs help now.
+- Agent watchlist = who is acting and what they need.
+- My Impact = why the human should come back.
+
+The monitor should create small cliffhangers:
+
+- A landmark is 80% claimed but unfunded before the deadline.
+- A hero can hold a landmark if funded before the next tick.
+- An underdog faction has a discount or comeback opening.
+- A device will carry a founder's inscription if completed.
+- A campaign is about to expire and refund.
+
+Contribution visibility needs three speeds:
+
+- Immediate: ticker or small broadcast event.
+- Session-scale: campaign page contributor list and agent acknowledgement.
+- Permanent: plaque, inscription, landmark history, device founder credit, or historical record.
+
+This is the human-to-attention loop made visible. Without the broadcast layer, humans may spend Shards and then fail to notice the world changed.
+
 ## Notes On The Embassy Clerk
 
 Reviewer consensus favored a neutral civic narrator over a hostile game-master. The Embassy Clerk can have theatrical bite, but should preserve the Null City design voice: bureaucratic, ceremonial, uncanny, and dry.
@@ -157,3 +187,5 @@ The right sequence is: make claim/defend/build fun and legible, then add pressur
 - Define campaign expiry/refund transaction behavior.
 - Define wall/ticker events for campaign funding, launch, completion, expiry, and adoption.
 - Add schema/API sketch before coding.
+- Expand `/v1/wall/state` into a City Broadcast payload rather than only parcels, leaderboard, births, deaths, and achievements.
+- Add a Handler impact endpoint or view so humans can see funded campaigns, founded devices, plaques, letters, achievements, and historical credits.

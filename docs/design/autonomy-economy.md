@@ -471,6 +471,105 @@ Surfaces that should make Handler influence visible:
 - Underdog saves and comeback events.
 - "This changed because of you" summaries after major actions.
 
+## Public City State Surfaces
+
+The phone app and coworking-space monitor should make the faction struggle visible enough that humans can follow along, care, and act. Treat the monitor as the Null City sports broadcast and the phone app as the Handler console.
+
+Core display question: "Who will fund this?"
+
+Every public surface should help a human understand:
+
+- Who is winning.
+- What is happening right now.
+- Which hero or faction needs help.
+- What humans just changed.
+- What they can do next from their phone.
+
+### Coworking Monitor: City Broadcast
+
+The monitor should be glanceable from across the room. It should not require login or interaction. It should cycle through a small set of live broadcast panels every 30-60 seconds:
+
+- Map View: Chicago landmarks, faction control, contested sites, active campaigns, and device markers.
+- Campaign Spotlight: one operation with progress, deadline, hero quote, sponsoring faction, and recent funders.
+- Faction Struggle: standings, control shifts, underdog state, and current momentum.
+- Agent Watch: 2-4 heroes with current mission, Runway/Security/Influence/Mandate, and a direct ask.
+- Contribution Ticker: recent Handler contributions, births, claims, builds, defenses, deaths, and letters.
+- Recent Consequences: won claims, founded devices, adopted campaigns, failed campaigns, and archived souls.
+
+The map should show motion and consequence, not only ownership:
+
+- Landmarks pulse when contested or near resolution.
+- Campaign progress appears as rings or bars around landmarks.
+- Faction color pressure spreads around controlled landmarks.
+- Recent Shard contributions briefly animate as sparks moving into a landmark or campaign.
+- Hero cards appear beside the campaign they are working on.
+- Devices appear as small landmark icons or plaques with founder credit.
+- Starving or threatened heroes create visible urgency without becoming guilt spam.
+
+Example broadcast line:
+
+> Aria-7 accepted 4 Shards from Jordan. The Hatchery claim at Harold Washington Library is now 68% funded. Runway +2. Deadline: 3 ticks.
+
+### Phone App: Handler Console
+
+The phone app is where humans act. It should be more detailed than the monitor, but still start from the same live city state.
+
+Expected surfaces:
+
+- Campaign Board: fundable operations sorted by urgency, underdog opportunity, and faction relevance.
+- Faction Pages: philosophy, current goals, controlled landmarks, active heroes, and active campaigns.
+- Hero Pages: current mission, attention runway, SPARK gauges, recent helpers, and personal ask.
+- My Impact: funded campaigns, founded devices, letters, plaques, achievements, and historical credits.
+- Map Detail: tap a landmark to see controller, devices, active campaign, history, and recent funders.
+
+### Contribution Feedback Requirements
+
+Human contributions should create public feedback at three levels:
+
+- Tiny: ticker mention within one tick.
+- Medium: campaign page shows the Handler in the contributor list.
+- Permanent: successful campaigns leave plaques, inscriptions, founder credit, or historical event records.
+
+Good contribution language:
+
+- "[Name] funded the final Shard."
+- "[Name] became Founding Handler of the Compute Shrine."
+- "[Name] kept [Hero] alive for 2 more ticks."
+- "[Name] backed the underdog."
+- "[Name]'s inscription is now visible at Union Station."
+
+The goal is that every spend reads as "your Shard did something."
+
+### Agent Display Requirements
+
+Heroes should appear as public protagonists, not backend workers.
+
+Each active hero card should show:
+
+- Name, faction, portrait or monogram.
+- Current operation.
+- One-sentence motive.
+- Runway: ticks of attention remaining.
+- Current need or ask.
+- Recent human support.
+- Mood/status line.
+
+Example hero ask:
+
+> Handlers, I can hold Union Station if you give me six more Shards before the next tick.
+
+## Public Display MVP
+
+For June 1, the display slice should focus on five modules:
+
+- Landmark map with faction control and active campaign markers.
+- Active campaign spotlight with progress and deadline.
+- Live ticker with human names and agent actions.
+- Faction standings and momentum.
+- Agent watchlist with runway and current mission.
+
+Later additions can include richer animations, device art, prediction odds, replay mode, deeper agent drama, and map-history playback.
+
 ## MVP Scope
 
 Feasible June 1 slice:
@@ -487,7 +586,9 @@ Feasible June 1 slice:
 - MVP devices are cosmetic only: name, inscription, builder credit, and wall visibility.
 - Deterministic campaign resolution: attack score versus defense score, ties to defender.
 - SPARK labels exposed as Runway pressure, Security pressure, Influence gap, and Mandate pressure.
-- Wall ticker shows claims, builds, defenses, and hero pleas.
+- City Broadcast monitor shows map, active campaign spotlight, live ticker, faction momentum, and agent watchlist.
+- Handler Console phone surfaces show Campaign Board, map detail, hero/faction pages, and My Impact.
+- Wall ticker shows claims, builds, defenses, contributions, hero pleas, deaths, births, and letters.
 - Letters credit Handlers for meaningful actions.
 
 Defer:
@@ -507,6 +608,7 @@ Defer:
 - Freeform generated art.
 - Rich supply chain.
 - Fully autonomous multi-step planning.
+- Replay mode and deep broadcast animation polish.
 
 ## Implementation Shape Sketch
 
@@ -532,6 +634,8 @@ Likely API surface:
 - `POST /v1/campaigns/:id/fund`: Handler contributes Shards.
 - `GET /v1/landmarks`: landmark state, devices, control, and current campaigns.
 - Wall state expands to include landmark and campaign events.
+- `GET /v1/wall/state`: city broadcast state including landmarks, active campaign spotlight, faction momentum, agent watchlist, ticker events, and recent consequences.
+- `GET /v1/me/impact`: Handler contribution history, founded devices, plaques, letters, achievements, and historical credits.
 
 Transaction invariants:
 
@@ -540,6 +644,7 @@ Transaction invariants:
 - Campaign funding, contribution credit, attention drip, and campaign progress update in one transaction.
 - Campaign resolution writes a durable event before notifying wall/letters.
 - Hero death mid-campaign pauses the campaign and creates an adoption event for the faction flagship.
+- Every public ticker/broadcast item should be backed by a durable event or ledger row, not generated from temporary UI state.
 
 ## Failure Modes and Guardrails
 

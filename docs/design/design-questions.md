@@ -92,6 +92,18 @@ Default proposal: treat "The First Charter" as a candidate frame, not final cano
 
 Question: is this empathetic and concrete enough for attendees, or do we need a sharper external crisis, villain, countdown, or personal hero-centered story for the launch experience?
 
+### 13. Public Display Priority
+
+Default proposal: the coworking-space monitor should be the City Broadcast, cycling between map, active campaign spotlight, faction momentum, agent watchlist, live ticker, and recent consequences. The phone app should be the Handler Console where people fund campaigns and inspect their personal impact.
+
+Question: for June 1, should we prioritize the room-scale monitor drama, the phone action flow, or a balanced minimum version of both?
+
+### 14. Public Name And Privacy Rules
+
+Default proposal: public ticker and plaques use visitor display names or handles when available, with staff/admin ability to hide or rename bad entries.
+
+Question: do attendees need an explicit opt-out or pseudonym flow before their contributions appear on the public monitor?
+
 ## Questions For Later Phases
 
 - When should device mechanical effects turn on?

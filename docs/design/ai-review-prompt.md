@@ -53,8 +53,9 @@ Critically review `docs/design/autonomy-economy.md`. Do not implement code unles
 6. How SPARK should be renamed, extended, or kept stable.
 7. Whether "OnionDAO Handlers" is the right human role label.
 8. Whether fixed Chicago landmarks plus devices are a strong enough map mechanic.
-9. Edge cases not covered in the design.
-10. Specific changes you recommend to the design doc before implementation planning.
+9. Whether the City Broadcast monitor and Handler Console phone surfaces make the faction struggle compelling and actionable.
+10. Edge cases not covered in the design.
+11. Specific changes you recommend to the design doc before implementation planning.
 
 ## Viewpoints
 
